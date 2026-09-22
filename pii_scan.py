@@ -185,4 +185,4 @@ def read_data() -> list:
 
 if __name__ == '__main__':
     print(show_aggie_pride())
-    anonymize_data(read_data())
+    # anonymize_data(read_data())  # add for sprint3
