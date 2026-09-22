@@ -63,6 +63,3 @@ class TestPIIScan(unittest.TestCase):
                 self.assertEqual(sample_text[result.start:result.end], 'test@example.com')
                 self.assertGreaterEqual(result.score, 0)
                 self.assertLessEqual(result.score, 1)
-
-
-
