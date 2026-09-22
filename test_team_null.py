@@ -13,8 +13,8 @@ class TestTeam_null(unittest.TestCase):
         """Test US_SSN functionality"""
         valid_ssns = [
             "SSN 123-12-1234",
-            "SSN 987654321",
-            "SSN 123-45-6789 and 987-65-4321",
+            "SSN 234567890",
+            "SSN 123-45-6789 and 234-56-7890",
         ]
         invalid_ssns = [
             "SSN 1234-56-789",
