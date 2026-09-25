@@ -57,7 +57,8 @@ class TestTeam__z(unittest.TestCase):
 
         # Capitalized days, locations, and common nouns should not create PERSON matches.
         negative_text = (
-            "The project status meeting is on Monday morning at the public park."
+            "The project status meeting is on Monday morning at Central Park "
+            "beside the Red Bicycle."
         )
         negative_results = analyze_text(negative_text, entity_list=['PERSON'])
         person_matches = [
