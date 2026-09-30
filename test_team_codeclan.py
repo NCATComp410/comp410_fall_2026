@@ -61,6 +61,16 @@ class TestTeam_codeclan(unittest.TestCase):
 
     def test_au_tfn(self): # Kailyn & Marcus
         """Test AU_TFN functionality"""
+        # positive test case - valid TFN
+        text = "My tax file number is 876 543 210"
+        results = analyze_text(text, ['AU_TFN'])
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].entity_type, 'AU_TFN')
+        self.assertEqual(text[results[0].start:results[0].end], '876 543 210')
+
+        # negative test case - wrong check digit
+        results = analyze_text("My tax file number is 876 543 211", ['AU_TFN'])
+        self.assertEqual(len(results), 0)
 
 
 if __name__ == '__main__':
