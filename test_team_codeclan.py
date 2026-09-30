@@ -37,6 +37,14 @@ class TestTeam_codeclan(unittest.TestCase):
 
     def test_au_acn(self): # Jasmine & Ryan
         """Test AU_ACN functionality"""
+        text = "The company ACN is 004 085 616"
+        results = analyze_text(text, ['AU_ACN'])
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].entity_type, 'AU_ACN')
+        self.assertEqual(text[results[0].start:results[0].end], '004 085 616')
+
+        results = analyze_text("The company ACN is 004 085 617", ['AU_ACN'])
+        self.assertEqual(len(results), 0)
 
     def test_au_medicare(self): # Sapri
         """Test AU_MEDICARE functionality"""
