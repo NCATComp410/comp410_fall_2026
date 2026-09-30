@@ -48,6 +48,16 @@ class TestTeam_codeclan(unittest.TestCase):
 
     def test_au_medicare(self): # Sapri
         """Test AU_MEDICARE functionality"""
+        # positive test case - valid Medicare number
+        text = "My Medicare card number is 2123 45670 1"
+        results = analyze_text(text, ['AU_MEDICARE'])
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].entity_type, 'AU_MEDICARE')
+        self.assertEqual(text[results[0].start:results[0].end], '2123 45670 1')
+
+        # negative test case - wrong check digit
+        results = analyze_text("My Medicare card number is 2123 45679 1", ['AU_MEDICARE'])
+        self.assertEqual(len(results), 0)
 
     def test_au_tfn(self): # Kailyn & Marcus
         """Test AU_TFN functionality"""
