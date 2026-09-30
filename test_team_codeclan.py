@@ -22,8 +22,18 @@ class TestTeam_codeclan(unittest.TestCase):
         results = analyze_text("My bank routing number is 021000022", ['ABA_ROUTING_NUMBER'])
         self.assertEqual(len(results), 0)
 
-    def test_au_abn(self): # Jarren & Rhaiyn
-        """Test AU_ABN functionality"""
+    def test_au_abn(self):
+       """Test AU_ABN functionality"""
+       # positive test case - valid ABN
+       text = "Our ABN is 51 824 753 556"
+       results = analyze_text(text, ['AU_ABN'])
+       self.assertEqual(len(results), 1)
+       self.assertEqual(results[0].entity_type, 'AU_ABN')
+       self.assertEqual(text[results[0].start:results[0].end], '51 824 753 556')
+
+       # negative test case - invalid check digits
+       results = analyze_text("Our ABN is 51 824 753 557", ['AU_ABN'])
+       self.assertEqual(len(results), 0)
 
     def test_au_acn(self): # Jasmine & Ryan
         """Test AU_ACN functionality"""
