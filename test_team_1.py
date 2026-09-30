@@ -24,9 +24,14 @@ class TestTeam__1(unittest.TestCase):
         for text, expected_value in positive_cases:
             with self.subTest(text=text):
                 matches = analyze_text(text, ["ES_NIF"])
-                self.assertTrue(matches)
-                self.assertTrue(any(match.entity_type == "ES_NIF" for match in matches))
-                self.assertIn(expected_value, text)
+                self.assertTrue(
+                    any(
+                        match.entity_type == "ES_NIF"
+                        and text[match.start:match.end] == expected_value
+                        for match in matches
+                    ),
+                    f"Expected ES_NIF match {expected_value!r} in: {text}",
+                )
 
         negative_cases = [
             "NIF: 1234567Z",
