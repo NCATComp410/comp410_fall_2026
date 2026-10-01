@@ -12,8 +12,11 @@ class ItalianVatRecognizer(ItVatCodeRecognizer):
         r"(?:partita[ \t]+iva|p[._]?[ \t]*iva|"
         r"vat[ \t]+(?:code|number)|codice[ \t]+iva)"
     )
+    # Only a short, known label-to-value phrase may precede an unprefixed code.
     CONTEXT_BEFORE = re.compile(
-        rf"(?<!\w){VAT_LABEL}[ \t:#=\-]*$", re.IGNORECASE
+        rf"(?<!\w){VAT_LABEL}(?!\w)[ \t:#=\-]{{0,16}}"
+        r"(?:(?:is|equals|è)[ \t:#=\-]{1,16})?$",
+        re.IGNORECASE,
     )
 
     def __init__(self, supported_language="en"):

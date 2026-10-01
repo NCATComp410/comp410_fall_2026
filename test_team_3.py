@@ -28,6 +28,11 @@ class TestTeam__3(unittest.TestCase):
         entity = ["IT_VAT_CODE"]
         valid_cases = (
             ("bare", "01333550323", "01333550323"),
+            ("linking word is", "VAT number is 01333550323.", "01333550323"),
+            ("mixed-case linking word", "My VaT NuMbEr IS: 01333550323.", "01333550323"),
+            ("linking word equals", "VAT code equals 01333550323.", "01333550323"),
+            ("Italian linking word", "La partita IVA è 01333550323.", "01333550323"),
+            ("linking separated value", "Partita IVA is 013 33550 323.", "013 33550 323"),
             ("attached prefix", "Supplier: IT01333550323.", "IT01333550323"),
             ("lowercase prefix", "Supplier: it01333550323.", "it01333550323"),
             ("underscore context", "P_IVA: 01333550323", "01333550323"),
@@ -52,7 +57,7 @@ class TestTeam__3(unittest.TestCase):
                 self.assertEqual((results[0].start, results[0].end),
                                  (start, start + len(code)))
 
-        text = "VAT number 01333550323; partita iva 12345670017"
+        text = "VAT number is 01333550323; partita iva equals 12345670017"
         results = analyze_text(text, entity)
         expected_spans = sorted(
             (text.index(code), text.index(code) + len(code))
@@ -80,6 +85,11 @@ class TestTeam__3(unittest.TestCase):
         self.assertEqual((results[0].start, results[0].end), (start, start + 13))
 
         invalid_cases = (
+            ("invoice linking word", "Invoice ID is 12345670017."),
+            ("neighboring invoice field", "VAT number is unavailable; Invoice ID is 12345670017."),
+            ("sentence boundary", "VAT number is unavailable. Invoice ID: 12345670017."),
+            ("negated label", "VAT number is not provided; Invoice ID: 12345670017."),
+            ("linking word fragment", "VAT number issue: 01333550323"),
             ("invalid office 000", "Partita IVA: 12345670009"),
             ("invalid office 101", "Partita IVA: 12345671015"),
             ("foreign valid-checksum identifier", "German VAT: DE 12345670017"),
