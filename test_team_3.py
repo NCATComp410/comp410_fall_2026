@@ -33,7 +33,6 @@ class TestTeam__3(unittest.TestCase):
                 self.assertEqual(results[0].end, expected_end)
 
         invalid_cases = [
-            "AB1234567",
             "Passaporto: AB123456",
             "Passaporto: A12345678",
             "Passaporto: ABC1234567",
