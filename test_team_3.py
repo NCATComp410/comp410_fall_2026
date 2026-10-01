@@ -14,6 +14,22 @@ class TestTeam__3(unittest.TestCase):
 
     def test_it_fiscal_code(self):
         """Test IT_FISCAL_CODE functionality"""
+        entity = ["IT_FISCAL_CODE"]
+        valid_cases = (
+            ("RSSMRA85T10A562S", "Fiscal code: RSSMRA85T10A562S"),
+            ("BNCLGU80A01F205D", "Fiscal code: BNCLGU80A01F205D"),
+        )
+        for code, text in valid_cases:
+            with self.subTest(code=code):
+                results = analyze_text(text, entity)
+                start = text.index(code)
+                self.assertEqual(len(results), 1)
+                self.assertEqual(results[0].entity_type, entity[0])
+                self.assertEqual((results[0].start, results[0].end),
+                                 (start, start + len(code)))
+
+        invalid_text = "Fiscal code: RSSMRA85T10A562"
+        self.assertEqual(analyze_text(invalid_text, entity), [])
 
     def test_it_identity_card(self):
         """Test IT_IDENTITY_CARD functionality"""
