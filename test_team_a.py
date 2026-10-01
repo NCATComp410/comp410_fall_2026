@@ -20,6 +20,48 @@ class TestTeam__a(unittest.TestCase):
 
     def test_us_itin(self):
         """Test US_ITIN functionality"""
+        valid_cases = [
+            ("ITIN: 900-50-1234", "900-50-1234"),
+            ("Tax ID: 912-65-4321", "912-65-4321"),
+            ("IRS number 923-70-1234", "923-70-1234"),
+            ("My taxpayer ID is 934-88-5678", "934-88-5678"),
+            ("ITIN 945-90-1234", "945-90-1234"),
+            ("Tax ID 956-92-4321", "956-92-4321"),
+            ("IRS ITIN: 967-94-1234", "967-94-1234"),
+            ("ITIN 978-96-4321", "978-96-4321"),
+            ("ITIN: 900501234", "900501234"),
+        ]
+
+        for text, expected_value in valid_cases:
+            with self.subTest(text=text):
+                matches = analyze_text(text, ["US_ITIN"])
+                self.assertTrue(
+                    any(
+                        match.entity_type == "US_ITIN"
+                        and text[match.start:match.end] == expected_value
+                        for match in matches
+                    ),
+                    f"Expected US_ITIN match {expected_value!r} in: {text}",
+                )
+
+        invalid_cases = [
+            "ITIN: 900-49-1234",
+            "ITIN: 900-66-1234",
+            "ITIN: 900-69-1234",
+            "ITIN: 900-89-1234",
+            "ITIN: 900-93-1234",
+            "ITIN: 800-50-1234",
+            "ITIN: 900-5-1234",
+            "SSN: 123-45-6789",
+        ]
+
+        for text in invalid_cases:
+            with self.subTest(text=text):
+                matches = analyze_text(text, ["US_ITIN"])
+                self.assertFalse(
+                    any(match.entity_type == "US_ITIN" for match in matches),
+                    f"Unexpected US_ITIN match found in: {text}",
+                )
 
     def test_us_passport(self):
         """Test US_PASSPORT functionality"""
