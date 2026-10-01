@@ -19,7 +19,7 @@ class TestTeam__a(unittest.TestCase):
         ]
         negative_cases = [
             "This is not a url: example",
-            "Visit http://localhost:8000/test",
+            "Visit localhost on port 8000",
             "The secret code is ABC123",
         ]
 
