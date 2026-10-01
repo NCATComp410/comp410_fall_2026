@@ -71,6 +71,32 @@ class TestTeam_operation_eclipse(unittest.TestCase):
 
     def test_medical_license(self):
         """Test MEDICAL_LICENSE functionality"""
+        positive_examples = [
+            "Dr. Patel's medical license is MD-1234567.",
+            "Board-issued license number: CA-9876543A.",
+            "State medical license: NY1234567.",
+            "License to practice: TX-MD-456789.",
+        ]
+
+        for sample_text in positive_examples:
+            with self.subTest(sample_text=sample_text):
+                results = analyze_text(sample_text, ['MEDICAL_LICENSE'])
+                self.assertIsInstance(results, list)
+                self.assertGreater(len(results), 0)
+                self.assertTrue(any(result.entity_type == 'MEDICAL_LICENSE' for result in results))
+
+        negative_examples = [
+            "The patient room number is 1234.",
+            "Call 555-0101 for the appointment desk.",
+            "Prescription ID: 987654.",
+            "The file number is AB-123.",
+            "The doctor is on floor 4B.",
+        ]
+
+        for sample_text in negative_examples:
+            with self.subTest(sample_text=sample_text):
+                results = analyze_text(sample_text, ['MEDICAL_LICENSE'])
+                self.assertEqual(results, [])
 
 
 if __name__ == '__main__':
