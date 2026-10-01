@@ -39,7 +39,7 @@ class TestTeam_operation_eclipse(unittest.TestCase):
             any(r.entity_type == "CRYPTO" for r in ltc_results),
             "Valid Litecoin address was not detected as CRYPTO"
         )
-
+        #
         # --- Negative test cases: text with no valid crypto address should not match ---
 
         # Plain text with no crypto address at all
