@@ -75,7 +75,22 @@ registry.add_recognizer(InPassportRecognizer(supported_language='en'))
 registry.add_recognizer(InVehicleRegistrationRecognizer(supported_language='en'))
 registry.add_recognizer(InVoterRecognizer(supported_language='en'))
 registry.add_recognizer(InGstinRecognizer(supported_language='en'))
-registry.add_recognizer(UkNinoRecognizer(supported_language='en'))
+nino_pattern = Pattern(
+    "NINO (medium)",
+    r"\b(?!bg|gb|nk|kn|nt|tn|zz|BG|GB|NK|KN|NT|TN|ZZ)"
+    r"([a-ceghj-pr-tw-zA-CEGHJ-PR-TW-Z]{1}[a-ceghj-npr-tw-zA-CEGHJ-NPR-TW-Z]{1})"
+    r"[\s-]?([0-9]{2})[\s-]?([0-9]{2})[\s-]?([0-9]{2})"
+    r"[\s-]?([a-dA-D]{1})?\b",
+    0.5,
+)
+registry.add_recognizer(UkNinoRecognizer(
+    patterns=[nino_pattern],
+    context=[
+        'nino', 'national', 'insurance', 'ni', 'number', 'hmrc', 'payroll',
+        'paye', 'p60', 'p45', 'social', 'security',
+    ],
+    supported_language='en',
+))
 registry.add_recognizer(ThTninRecognizer(supported_language='en'))
 registry.add_recognizer(KrRrnRecognizer(supported_language='en'))
 registry.add_recognizer(SgFinRecognizer(supported_language='en'))

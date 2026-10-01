@@ -30,10 +30,12 @@ class TestTeam__z(unittest.TestCase):
             ("ab123456c", "ab123456c"),
             ("jw 12 34 56 b", "jw 12 34 56 b"),
             ("JW123456B", "JW123456B"),
-        ("ER 98 76 54 D", "ER 98 76 54 D"),
-        ("My NINO is AB123456C.", "AB123456C"),
-        ("National Insurance number is JW123456B.", "JW123456B"),
-        ("Employee record: AB 12 34 56 C on file.", "AB 12 34 56 C"),
+            ("ER 98 76 54 D", "ER 98 76 54 D"),
+            ("AB-12-34-56-C", "AB-12-34-56-C"),
+            ("AB123456", "AB123456"),
+            ("My NINO is AB123456C.", "AB123456C"),
+            ("National Insurance number is JW123456B.", "JW123456B"),
+            ("Employee record: AB 12 34 56 C on file.", "AB 12 34 56 C"),
         ]
 
         for text, expected in valid_cases:
@@ -54,27 +56,49 @@ class TestTeam__z(unittest.TestCase):
                         self.assertGreaterEqual(result.score, 0.0)
                         self.assertLessEqual(result.score, 1.0)
 
-        # Contextual keyword boosting: compare contextual match directly against baseline
+        # Contextual keyword boosting: compare contextual matches directly against baseline
         raw_text = "AB123456C"
-        context_text = "My NINO is AB123456C."
         raw_results = [r for r in analyze_text(raw_text, entity_list=['UK_NINO']) if r.entity_type == 'UK_NINO']
-        context_results = [r for r in analyze_text(context_text, entity_list=['UK_NINO']) if r.entity_type == 'UK_NINO']
-
         self.assertTrue(raw_results, "Expected baseline match for bare NINO")
-        self.assertTrue(context_results, "Expected match for contextual NINO")
-        self.assertGreater(
-            context_results[0].score,
-            raw_results[0].score,
-            "Expected contextual keywords ('NINO') to boost confidence score over the baseline"
-        )
+        context_terms = [
+            "NINO",
+            "National Insurance",
+            "NI Number",
+            "HMRC",
+            "payroll",
+            "PAYE",
+            "P60",
+            "P45",
+            "social security",
+        ]
+        for term in context_terms:
+            with self.subTest(context_term=term):
+                context_text = f"{term}: AB123456C"
+                context_results = [
+                    r for r in analyze_text(context_text, entity_list=['UK_NINO'])
+                    if r.entity_type == 'UK_NINO'
+                ]
+                self.assertTrue(context_results, f"Expected match for contextual NINO: {term}")
+                self.assertGreater(
+                    context_results[0].score,
+                    raw_results[0].score,
+                    f"Expected contextual keyword '{term}' to boost confidence over the baseline"
+                )
 
         # Negative test cases: invalid prefixes, suffixes, lengths, and non-NINO text
         invalid_cases = [
             "DB123456A",  # Invalid prefix: D cannot be first letter
+            "FB123456A",  # Invalid prefix: F cannot be first letter
+            "IB123456A",  # Invalid prefix: I cannot be first letter
             "QB123456A",  # Invalid prefix: Q cannot be first letter
+            "UB123456A",  # Invalid prefix: U cannot be first letter
             "VB123456A",  # Invalid prefix: V cannot be first letter
             "AD123456A",  # Invalid prefix: D cannot be second letter
+            "AF123456A",  # Invalid prefix: F cannot be second letter
+            "AI123456A",  # Invalid prefix: I cannot be second letter
             "AQ123456A",  # Invalid prefix: Q cannot be second letter
+            "AU123456A",  # Invalid prefix: U cannot be second letter
+            "AV123456A",  # Invalid prefix: V cannot be second letter
             "AO123456A",  # Invalid prefix: O cannot be second letter
             "BG123456A",  # Disallowed administrative prefix
             "GB123456A",  # Disallowed administrative prefix
