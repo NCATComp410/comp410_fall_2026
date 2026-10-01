@@ -81,6 +81,47 @@ class TestTeam__1(unittest.TestCase):
 
     def test_fi_personal_identity_code(self):
         """Test FI_PERSONAL_IDENTITY_CODE functionality"""
+        entity = ['FI_PERSONAL_IDENTITY_CODE']
+
+        # Positive: valid codes (correct date, century sign and check char)
+        valid_cases = [
+            ("Henkilötunnus: 131052-308T", "131052-308T"),  # 1900s, '-'
+            ("My hetu is 010594Y9995", "010594Y9995"),       # 1900s, 'Y'
+            ("Personal identity code 020300A123N",
+             "020300A123N"),                                 # 2000s, 'A'
+            ("Born 1876, code 150176+2228", "150176+2228"),  # 1800s, '+'
+            ("hetu 131052-308t", "131052-308t"),             # lower-case
+        ]
+        for text, expected_value in valid_cases:
+            with self.subTest(text=text):
+                results = analyze_text(text, entity)
+                self.assertEqual(len(results), 1)
+                result = results[0]
+                self.assertEqual(result.entity_type,
+                                 'FI_PERSONAL_IDENTITY_CODE')
+                self.assertEqual(text[result.start:result.end],
+                                 expected_value)
+
+        # Positive: multiple codes in one document
+        text = "Codes 131052-308T and 311299-0018 were submitted."
+        results = analyze_text(text, entity)
+        found = sorted(text[r.start:r.end] for r in results)
+        self.assertEqual(found, ['131052-308T', '311299-0018'])
+
+        # Negative: wrong check character, impossible date, bad format
+        invalid_cases = [
+            "Henkilötunnus: 131052-308U",   # wrong check character
+            "Henkilötunnus: 310211-123D",   # 31 Feb does not exist
+            "Henkilötunnus: 290200+1239",   # 1800 was not a leap year
+            "Henkilötunnus: 131052Z308T",   # 'Z' is not a century sign
+            "Henkilötunnus: 13105-308T",    # date part too short
+            "Henkilötunnus: 131052-30T",    # individual number too short
+            "Call me at 919-555-0123.",     # phone number
+            "Meet me at the library at noon.",
+        ]
+        for text in invalid_cases:
+            with self.subTest(text=text):
+                self.assertEqual(analyze_text(text, entity), [])
 
     def test_iban_code(self):
         """Test IBAN_CODE functionality"""
