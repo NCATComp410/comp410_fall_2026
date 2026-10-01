@@ -97,7 +97,20 @@ crypto_recognizer = PatternRecognizer(
     name="crypto_recognizer"
 )
 
+us_passport_pattern = Pattern(
+    "US passport pattern",
+    r"(?i)\b(?:[A-Z]{1,2}\d{7,8}|\d{9})\b",
+    0.7,
+)
+
+us_passport_recognizer = PatternRecognizer(
+    supported_entity="US_PASSPORT",
+    patterns=[us_passport_pattern],
+    name="us_passport_recognizer"
+)
+
 registry.add_recognizer(crypto_recognizer)
+registry.add_recognizer(us_passport_recognizer)
 
 # log_decision_process=True will log the decision process for debugging
 analyzer = AnalyzerEngine(registry=registry, log_decision_process=False)

@@ -65,6 +65,28 @@ class TestTeam__a(unittest.TestCase):
 
     def test_us_passport(self):
         """Test US_PASSPORT functionality"""
+        valid_passports = [
+            "Passport number: P12345678",
+            "US passport ID is AB1234567",
+            "Passport card no. 123456789",
+        ]
+        invalid_passports = [
+            "Passport number: 12345678",
+            "US passport ID is ABC12345",
+            "Passport no. XX123456",
+        ]
+
+        for text in valid_passports:
+            with self.subTest(text=text):
+                results = analyze_text(text, entity_list=['US_PASSPORT'])
+                matches = [result for result in results if result.entity_type == 'US_PASSPORT']
+                self.assertTrue(matches, f'Expected a US_PASSPORT match in: {text}')
+
+        for text in invalid_passports:
+            with self.subTest(text=text):
+                results = analyze_text(text, entity_list=['US_PASSPORT'])
+                matches = [result for result in results if result.entity_type == 'US_PASSPORT']
+                self.assertFalse(matches, f'Expected no US_PASSPORT match in: {text}')
 
 
 if __name__ == '__main__':
