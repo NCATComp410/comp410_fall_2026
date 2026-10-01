@@ -10,12 +10,18 @@ class ItalianVatRecognizer(ItVatCodeRecognizer):
 
     VAT_LABEL = (
         r"(?:partita[ \t]+iva|p[._]?[ \t]*iva|"
-        r"vat[ \t]+(?:code|number)|codice[ \t]+iva)"
+        r"vat[ \t]+(?:codes?|numbers?)|codice[ \t]+iva)"
     )
     # Only a short, known label-to-value phrase may precede an unprefixed code.
     CONTEXT_BEFORE = re.compile(
         rf"(?<!\w){VAT_LABEL}(?!\w)[ \t:#=\-]{{0,16}}"
         r"(?:(?:is|equals|è)[ \t:#=\-]{1,16})?$",
+        re.IGNORECASE,
+    )
+    # Continue a labeled list only across commas or explicit conjunctions.
+    LIST_SEPARATOR = re.compile(
+        r"[ \t]*(?:,[ \t]*(?:(?:and|or|e|o|&)[ \t]+)?|"
+        r"(?:and|or|e|o|&)[ \t]+)[ \t]*",
         re.IGNORECASE,
     )
 
@@ -54,14 +60,22 @@ class ItalianVatRecognizer(ItVatCodeRecognizer):
         return super().validate_result(number)
 
     def analyze(self, text, entities, nlp_artifacts=None, regex_flags=None):
-        """Require a VAT label for an unprefixed number embedded in other text."""
+        """Accept labeled lists without carrying context into unrelated fields."""
         results = super().analyze(
             text, entities, nlp_artifacts=nlp_artifacts, regex_flags=regex_flags
         )
-        standalone = re.fullmatch(r"\s*[0-9]{11}\s*", text) is not None
-        return [
-            result for result in results
-            if text[result.start:result.end].upper().startswith("IT")
-            or standalone
-            or self.CONTEXT_BEFORE.search(text[:result.start])
-        ]
+        standalone = re.fullmatch(r"[^\w]*[0-9]{11}[^\w]*", text) is not None
+        accepted = []
+        labeled_end = None
+        for result in sorted(results, key=lambda match: match.start):
+            has_label = self.CONTEXT_BEFORE.search(text[:result.start]) is not None
+            continues_list = (
+                labeled_end is not None
+                and self.LIST_SEPARATOR.fullmatch(text[labeled_end:result.start]) is not None
+            )
+            prefixed = text[result.start:result.end].upper().startswith("IT")
+            if prefixed or standalone or has_label or continues_list:
+                accepted.append(result)
+            # A prefix alone must not establish context for unrelated numbers.
+            labeled_end = result.end if has_label or continues_list else None
+        return accepted
