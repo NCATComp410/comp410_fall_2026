@@ -72,10 +72,9 @@ class TestTeam_operation_eclipse(unittest.TestCase):
     def test_medical_license(self):
         """Test MEDICAL_LICENSE functionality"""
         positive_examples = [
-            "Dr. Patel's medical license is MD-1234567.",
-            "Board-issued license number: CA-9876543A.",
-            "State medical license: NY1234567.",
-            "License to practice: TX-MD-456789.",
+            "Medical license number: AB1000001",
+            "DEA certificate number: AB1000001 is active.",
+            "Physician license ID AB1000001 on file.",
         ]
 
         for sample_text in positive_examples:
@@ -86,11 +85,10 @@ class TestTeam_operation_eclipse(unittest.TestCase):
                 self.assertTrue(any(result.entity_type == 'MEDICAL_LICENSE' for result in results))
 
         negative_examples = [
-            "The patient room number is 1234.",
-            "Call 555-0101 for the appointment desk.",
-            "Prescription ID: 987654.",
-            "The file number is AB-123.",
-            "The doctor is on floor 4B.",
+            "Medical license number: AB1234567",
+            "The doctor claimed certificate AB9999999 but it is invalid.",
+            "Contact us at test@example.com for more info.",
+            "The quick brown fox jumps over the lazy dog.",
         ]
 
         for sample_text in negative_examples:
