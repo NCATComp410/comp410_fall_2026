@@ -11,6 +11,33 @@ class TestTeam__3(unittest.TestCase):
 
     def test_it_driver_license(self):
         """Test IT_DRIVER_LICENSE functionality"""
+        valid_cases = [
+            ("standard format", "My Italian driver's license is AB1234567C.", "AB1234567C"),
+            ("context wording", "Licenza di guida: ab1234567c.", "ab1234567c"),
+        ]
+        for label, text, code in valid_cases:
+            with self.subTest(case=label):
+                results = analyze_text(text, ["IT_DRIVER_LICENSE"])
+                self.assertEqual(len(results), 1)
+                self.assertEqual(results[0].entity_type, "IT_DRIVER_LICENSE")
+                start = text.lower().index(code.lower())
+                self.assertEqual(
+                    (results[0].start, results[0].end),
+                    (start, start + len(code)),
+                )
+
+        invalid_cases = [
+            "Patente: AB1234567",
+            "Patente: A1234567C",
+            "Patente: AB12345678",
+            "Patente: AB1234567CC",
+            "Patente: U1234567C",
+            "Patente: U1BCDEFGH",
+            "My favorite number is 1234567890.",
+        ]
+        for text in invalid_cases:
+            with self.subTest(text=text):
+                self.assertEqual(analyze_text(text, ["IT_DRIVER_LICENSE"]), [])
 
     def test_it_fiscal_code(self):
         """Test IT_FISCAL_CODE functionality"""
