@@ -46,6 +46,39 @@ class TestTeam__z(unittest.TestCase):
 
     def test_uk_nhs(self):
         """Test UK_NHS functionality"""
+        positive_cases = [
+            ("NHS number: 9434765919", "9434765919"),
+            ("Patient identifier: 943 476 5919", "943 476 5919"),
+            ("Medical record number: 943-476-5919", "943-476-5919"),
+        ]
+
+        for text, expected_value in positive_cases:
+            with self.subTest(text=text):
+                results = analyze_text(text, entity_list=['UK_NHS'])
+                self.assertTrue(
+                    any(
+                        result.entity_type == 'UK_NHS'
+                        and text[result.start:result.end] == expected_value
+                        for result in results
+                    ),
+                    f"Expected UK_NHS match {expected_value!r} in: {text}",
+                )
+
+        negative_cases = [
+            "NHS number: 9434765918",
+            "NHS number: 943476591",
+            "NHS number: 94347659190",
+            "NHS number: 94-3476-5919",
+            "The appointment is next Tuesday.",
+        ]
+
+        for text in negative_cases:
+            with self.subTest(text=text):
+                results = analyze_text(text, entity_list=['UK_NHS'])
+                self.assertFalse(
+                    any(result.entity_type == 'UK_NHS' for result in results),
+                    f"Unexpected UK_NHS match in: {text}",
+                )
 
     def test_uk_nino(self):
         """Test UK_NINO functionality"""
