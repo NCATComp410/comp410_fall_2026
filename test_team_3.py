@@ -33,11 +33,12 @@ class TestTeam__3(unittest.TestCase):
                 self.assertEqual(results[0].end, expected_end)
 
         invalid_cases = [
-            "AB123456",
-            "A12345678",
-            "ABC1234567",
-            "AB12345678",
-            "AB12345X7",
+            "AB1234567",
+            "Passaporto: AB123456",
+            "Passaporto: A12345678",
+            "Passaporto: ABC1234567",
+            "Passaporto: AB12345678",
+            "Passaporto: AB12345X7",
         ]
         for text in invalid_cases:
             with self.subTest(text=text):
