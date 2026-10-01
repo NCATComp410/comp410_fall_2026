@@ -13,6 +13,7 @@ class TestTeam_operation_eclipse(unittest.TestCase):
         """Test CREDIT_CARD functionality"""
 
     def test_crypto(self):
+        """Test CRYPTO functionality"""
         # Valid Bitcoin (legacy, base58) address - the well-known Bitcoin Genesis address
         btc_text = "Please send funds to 1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa today."
         btc_results = analyze_text(text=btc_text, entity_list=["CRYPTO"])
