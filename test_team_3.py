@@ -17,6 +17,17 @@ class TestTeam__3(unittest.TestCase):
 
     def test_it_identity_card(self):
         """Test IT_IDENTITY_CARD functionality"""
+        # Positive test
+        text = "My Italian identity card number is CA 1234567."
+        results = analyze_text(text, ["IT_IDENTITY_CARD"])
+
+        self.assertTrue(any(result.entity_type == "IT_IDENTITY_CARD" for result in results))
+
+        # Negative test
+        text = "My favorite number is 123456789."
+        results = analyze_text(text, ["IT_IDENTITY_CARD"])
+
+        self.assertFalse(any(result.entity_type == "IT_IDENTITY_CARD" for result in results))
 
     def test_it_passport(self):
         """Test IT_PASSPORT functionality"""
