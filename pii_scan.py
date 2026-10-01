@@ -5,7 +5,6 @@ import spacy
 from presidio_analyzer import (AnalyzerEngine, RecognizerRegistry, RecognizerResult,
                                PatternRecognizer, Pattern,)
 from presidio_analyzer.predefined_recognizers import (ItDriverLicenseRecognizer,
-                                                      ItVatCodeRecognizer,
                                                       ItFiscalCodeRecognizer,
                                                       ItIdentityCardRecognizer,
                                                       ItPassportRecognizer,
@@ -32,6 +31,7 @@ from presidio_analyzer.predefined_recognizers import (ItDriverLicenseRecognizer,
                                                       )
 
 from presidio_anonymizer import AnonymizerEngine
+from italian_vat_recognizer import ItalianVatRecognizer
 import requests
 
 # make sure en_core_web_lg is loaded correctly
@@ -56,7 +56,8 @@ registry = RecognizerRegistry()
 registry.load_predefined_recognizers()
 # Add some language specific recognizers as english instead of default language
 registry.add_recognizer(ItDriverLicenseRecognizer(supported_language='en'))
-registry.add_recognizer(ItVatCodeRecognizer(supported_language='en'))
+registry.remove_recognizer('ItVatCodeRecognizer', language='en')
+registry.add_recognizer(ItalianVatRecognizer(supported_language='en'))
 registry.add_recognizer(ItFiscalCodeRecognizer(supported_language='en'))
 registry.add_recognizer(ItIdentityCardRecognizer(supported_language='en'))
 registry.add_recognizer(ItPassportRecognizer(supported_language='en'))
