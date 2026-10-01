@@ -33,6 +33,35 @@ class TestTeam_operation_eclipse(unittest.TestCase):
 
     def test_crypto(self):
         """Test CRYPTO functionality"""
+        positive_cases = [
+            "0x52908400098527886E0F7030069857D2E4169EE7",
+            "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa",
+            "1BoatSLRHtKNngkdXEeobR76b53LETtpyT",
+            "3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy",
+            "ltc1" + "q" * 39,
+        ]
+        for address in positive_cases:
+            with self.subTest(address=address):
+                results = analyze_text(address, entity_list=['CRYPTO'])
+                self.assertEqual(len(results), 1)
+                self.assertEqual(results[0].entity_type, 'CRYPTO')
+                self.assertEqual(address[results[0].start:results[0].end], address)
+
+        negative_cases = [
+            "0x1234",
+            "ABC123XYZ",
+            "wallet address unavailable",
+            "The quick brown fox jumps over the lazy dog.",
+            "Wallet: 1BoatSLRHtKNngkdXEeobR",
+            "Address 0x1234567890abcdef is incomplete.",
+            "1IllegalO0lCharsNotValidBase58Address123",
+            "Contact us at test@example.com for more info.",
+            "",
+            "Send funds to 1BoatSLRHtKNngkdXEeobR",
+        ]
+        for text in negative_cases:
+            with self.subTest(text=text):
+                self.assertEqual(analyze_text(text, entity_list=['CRYPTO']), [])
 
     def test_date_time(self):
         """Test DATE_TIME functionality"""
