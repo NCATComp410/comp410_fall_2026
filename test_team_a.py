@@ -11,6 +11,33 @@ class TestTeam__a(unittest.TestCase):
 
     def test_url(self):
         """Test URL functionality"""
+        positive_cases = [
+            "https://example.com",
+            "www.example.com",
+            "My site is example.com",
+            "The URL https://sub.example.com/path?q=1 is here",
+        ]
+        negative_cases = [
+            "This is not a url: example",
+            "Visit localhost on port 8000",
+            "The secret code is ABC123",
+        ]
+
+        for text in positive_cases:
+            with self.subTest(text=text):
+                results = analyze_text(text, [])
+                self.assertTrue(
+                    any(getattr(result, 'entity_type', None) == 'URL' for result in results),
+                    f"Expected a URL match in: {text!r}"
+                )
+
+        for text in negative_cases:
+            with self.subTest(text=text):
+                results = analyze_text(text, [])
+                self.assertFalse(
+                    any(getattr(result, 'entity_type', None) == 'URL' for result in results),
+                    f"Did not expect a URL match in: {text!r}"
+                )
 
     def test_us_bank_number(self):
         """Test US_BANK_NUMBER functionality"""
