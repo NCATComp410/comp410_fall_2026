@@ -22,6 +22,7 @@ class TestTeam__a(unittest.TestCase):
         results = analyze_text(text, ['US_DRIVER_LICENSE'])
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].entity_type, 'US_DRIVER_LICENSE')
+        self.assertEqual(text[results[0].start:results[0].end], 'D1234567')
 
         # Positive test: Florida format
         text_fl = "Her Florida driver license number is S123456789012"
