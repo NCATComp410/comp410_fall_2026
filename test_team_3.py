@@ -20,6 +20,28 @@ class TestTeam__3(unittest.TestCase):
 
     def test_it_passport(self):
         """Test IT_PASSPORT functionality"""
+        positive_cases = [
+            ("Passaporto: AB1234567", 12, 21),
+            ("Documento: XZ0000001", 11, 20),
+        ]
+        for text, expected_start, expected_end in positive_cases:
+            with self.subTest(text=text):
+                results = analyze_text(text, ["IT_PASSPORT"])
+                self.assertEqual(len(results), 1)
+                self.assertEqual(results[0].entity_type, "IT_PASSPORT")
+                self.assertEqual(results[0].start, expected_start)
+                self.assertEqual(results[0].end, expected_end)
+
+        invalid_cases = [
+            "AB123456",
+            "A12345678",
+            "ABC1234567",
+            "AB12345678",
+            "AB12345X7",
+        ]
+        for text in invalid_cases:
+            with self.subTest(text=text):
+                self.assertEqual(analyze_text(text, ["IT_PASSPORT"]), [])
 
     def test_it_vat_code(self):
         """Test IT_VAT_CODE functionality"""
