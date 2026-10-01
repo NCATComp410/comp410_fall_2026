@@ -38,7 +38,7 @@ class TestPIIScan(unittest.TestCase):
                 with open(file, encoding='utf-8') as f:
                     for line in f:
                         # make sure everything that looks like a method name starts with test
-                        m = re.search(r'\s*def (\w+)', line)
+                        m = re.match(r'\s*def (\w+)', line)
                         if m:
                             err = 'Method name does not start with test: def '
                             err += m.group(1) + ' in ' + file
