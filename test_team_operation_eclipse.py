@@ -68,6 +68,34 @@ class TestTeam_operation_eclipse(unittest.TestCase):
 
     def test_email_address(self):
         """Test EMAIL_ADDRESS functionality"""
+        email_text = (
+            "Email: alex.smith+alerts@example.com; "
+            "e-mail address: jordan_lee@dept.ncat.edu"
+        )
+        results = analyze_text(email_text, entity_list=['EMAIL_ADDRESS'])
+        detected_addresses = {
+            email_text[result.start:result.end]
+            for result in results
+            if result.entity_type == 'EMAIL_ADDRESS'
+        }
+        self.assertEqual(
+            detected_addresses,
+            {'alex.smith+alerts@example.com', 'jordan_lee@dept.ncat.edu'},
+        )
+
+        invalid_samples = [
+            'Contact me at user@@example.com',
+            'Contact me at @example.com',
+            'Contact me at user@example',
+            'This is ordinary text with no email address.',
+            'Visit https://example.com/contact for details.',
+        ]
+        for sample in invalid_samples:
+            with self.subTest(sample=sample):
+                results = analyze_text(sample, entity_list=['EMAIL_ADDRESS'])
+                self.assertFalse(
+                    any(result.entity_type == 'EMAIL_ADDRESS' for result in results)
+                )
 
     def test_medical_license(self):
         """Test MEDICAL_LICENSE functionality"""
