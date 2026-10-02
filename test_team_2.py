@@ -109,7 +109,79 @@ class TestTeam__2(unittest.TestCase):
                 self.assertEqual(analyze_text(text, entity), [])
 
     def test_in_vehicle_registration(self):
-        """Test IN_VEHICLE_REGISTRATION functionality"""
+        """Check registration detection in everyday vehicle records."""
+        entity = ["IN_VEHICLE_REGISTRATION"]
+
+        # Positive cases: different formats and surrounding contexts.
+        examples = [
+            ("Vehicle registration: MH01AB1234.", "MH01AB1234"),
+            ("The number plate reads KA03MN4567.", "KA03MN4567"),
+            ("VEHICLE REGISTRATION: MH01AB1234.", "MH01AB1234"),
+            ("vehicle registration: KA03MN4567.", "KA03MN4567"),
+        ]
+
+        for text, expected in examples:
+            with self.subTest(example=text):
+                matches = analyze_text(text, entity_list=entity)
+
+                self.assertEqual(len(matches), 1)
+                match = matches[0]
+                self.assertEqual(
+                    match.entity_type,
+                    "IN_VEHICLE_REGISTRATION",
+                )
+                self.assertEqual(
+                    (match.start, match.end),
+                    (text.index(expected),
+                     text.index(expected) + len(expected)),
+                )
+                self.assertEqual(
+                    text[match.start:match.end],
+                    expected,
+                )
+
+        unsupported_formats = [
+            "Registration number: MH 01 AB 1234.",
+            "Vehicle number: KA-03-MN-4567.",
+        ]
+        for text in unsupported_formats:
+            with self.subTest(unsupported_format=text):
+                self.assertEqual(analyze_text(text, entity_list=entity), [])
+
+        # Negative cases: ordinary text and incomplete identifiers.
+        nonregistrations = [
+            "The car is waiting near the main entrance.",
+            "Vehicle registration: 12345678.",
+            "Registration number: MH01AB.",
+            "Number plate: ABCDE.",
+        ]
+
+        for text in nonregistrations:
+            with self.subTest(negative=text):
+                self.assertEqual(
+                    analyze_text(text, entity_list=entity),
+                    [],
+                )
+
+        # Multiple matches: detect both plates and their exact spans.
+        text = (
+            "Vehicle registration records list MH01AB1234 "
+            "for the first car and KA03MN4567 for the second."
+        )
+        matches = analyze_text(text, entity_list=entity)
+
+        self.assertEqual(len(matches), 2)
+        self.assertEqual(
+            {match.entity_type for match in matches},
+            {"IN_VEHICLE_REGISTRATION"},
+        )
+        self.assertEqual(
+            {(match.start, match.end) for match in matches},
+            {
+                (text.index(number), text.index(number) + len(number))
+                for number in ("MH01AB1234", "KA03MN4567")
+            },
+        )
 
     def test_in_voter(self):
         """Test IN_VOTER functionality"""
