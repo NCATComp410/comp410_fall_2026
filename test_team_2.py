@@ -17,6 +17,51 @@ class TestTeam__2(unittest.TestCase):
 
     def test_in_passport(self):
         """Test IN_PASSPORT functionality"""
+        entity = ["IN_PASSPORT"]
+        valid_cases = [
+            ("Passport: A1234567", "A1234567"),
+            ("My passport number is B7654321.", "B7654321"),
+            ("Indian passport B7654321", "B7654321"),
+            ("A1234567", "A1234567"),
+        ]
+        for text, expected_value in valid_cases:
+            with self.subTest(text=text):
+                results = analyze_text(text, entity)
+                self.assertEqual(len(results), 1)
+                self.assertEqual(results[0].entity_type, entity[0])
+                start = text.index(expected_value)
+                self.assertEqual((results[0].start, results[0].end),
+                                 (start, start + len(expected_value)))
+                self.assertEqual(text[results[0].start:results[0].end],
+                                 expected_value)
+
+        text = "Primary passport: A1234567; backup passport: B7654321."
+        results = analyze_text(text, entity)
+        expected_spans = sorted(
+            (text.index(value), text.index(value) + len(value))
+            for value in ("A1234567", "B7654321")
+        )
+        self.assertEqual(len(results), 2)
+        self.assertTrue(all(result.entity_type == entity[0]
+                            for result in results))
+        self.assertEqual(sorted((result.start, result.end)
+                                for result in results), expected_spans)
+        self.assertCountEqual(
+            [text[result.start:result.end] for result in results],
+            ["A1234567", "B7654321"],
+        )
+
+        invalid_cases = [
+            "Passport: A123456",       # too few digits
+            "Passport: A12345678",     # too many digits
+            "Passport: AB1234567",     # too many letters
+            "Passport: 12345678",      # missing leading letter
+            "Passport: A12345B7",      # non-digit within number
+            "My passport number is not available.",
+        ]
+        for text in invalid_cases:
+            with self.subTest(text=text):
+                self.assertEqual(analyze_text(text, entity), [])
 
     def test_in_vehicle_registration(self):
         """Test IN_VEHICLE_REGISTRATION functionality"""
