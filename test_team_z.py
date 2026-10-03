@@ -47,6 +47,94 @@ class TestTeam__z(unittest.TestCase):
 
     def test_location(self):
         """Test LOCATION functionality"""
+        positive_cases = [
+            (
+                "I was born in Greensboro, North Carolina.",
+                ["Greensboro", "North Carolina"],
+            ),
+            (
+                "The headquarters are located in London, United Kingdom.",
+                ["London", "United Kingdom"],
+            ),
+            ("She works in Paris, France.", ["Paris", "France"]),
+            (
+                "We traveled across Tokyo and Kyoto last spring.",
+                ["Tokyo", "Kyoto"],
+            ),
+            (
+                "Mount Everest is the highest mountain above sea level.",
+                ["Mount Everest"],
+            ),
+            (
+                "Lake Superior is the largest of the Great Lakes.",
+                ["Lake Superior"],
+            ),
+            (
+                "They hiked along the Rocky Mountains during vacation.",
+                ["Rocky Mountains"],
+            ),
+            (
+                "The Amazon River flows through South America.",
+                ["Amazon River", "South America"],
+            ),
+        ]
+
+        for text, expected_locations in positive_cases:
+            with self.subTest(text=text):
+                results = analyze_text(text, entity_list=['LOCATION'])
+                location_matches = [
+                    result for result in results
+                    if result.entity_type == 'LOCATION'
+                ]
+                detected_spans = [
+                    text[result.start:result.end]
+                    for result in location_matches
+                ]
+                for expected in expected_locations:
+                    self.assertTrue(
+                        any(
+                            expected in span or span in expected
+                            for span in detected_spans
+                        ),
+                        f"Expected LOCATION {expected!r} in: {text}",
+                    )
+                for result in location_matches:
+                    self.assertGreaterEqual(result.score, 0.4)
+                    self.assertLessEqual(result.score, 1.0)
+
+        contextual_text = "Daniel moved from Lagos to Chicago for graduate school."
+        contextual_results = analyze_text(
+            contextual_text,
+            entity_list=['LOCATION'],
+        )
+        contextual_spans = [
+            contextual_text[result.start:result.end]
+            for result in contextual_results
+            if result.entity_type == 'LOCATION'
+        ]
+        for expected in ["Lagos", "Chicago"]:
+            self.assertTrue(
+                any(expected in span for span in contextual_spans),
+                f"Expected LOCATION {expected!r} in: {contextual_text}",
+            )
+
+        negative_cases = [
+            "The project status meeting is on Monday morning at 10 AM.",
+            "Please call 336-555-0123 for customer support.",
+            "Her national insurance number is JW123456B.",
+            "Michael Jordan scored the winning basket.",
+            "Order number 12345 has been processed successfully.",
+            "The red bicycle is parked outside the room.",
+            "The conference is scheduled for October 3, 2026.",
+        ]
+        for text in negative_cases:
+            with self.subTest(text=text):
+                results = analyze_text(text, entity_list=['LOCATION'])
+                location_matches = [
+                    result for result in results
+                    if result.entity_type == 'LOCATION'
+                ]
+                self.assertEqual(len(location_matches), 0)
 
     def test_person(self):
         """Verify PERSON detection for names and rejection of non-names."""
