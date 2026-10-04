@@ -93,7 +93,7 @@ class TestTeam__z(unittest.TestCase):
                 for expected in expected_locations:
                     self.assertTrue(
                         any(
-                            expected in span or span in expected
+                            expected in span
                             for span in detected_spans
                         ),
                         f"Expected LOCATION {expected!r} in: {text}",
