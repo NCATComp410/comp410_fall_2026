@@ -1,0 +1,4 @@
+Using anonymize_text() in pii_scan.py create a simple test web app that allows
+the user to enter a list of entities to search for and some text to be anonymized.  
+The output should be a redacted version of the text replacing any PII with <PII_TYPE>, where 
+PII_TYPE is the entity type that was found.  Make the web app so that it can run cleanly from codespace. 
