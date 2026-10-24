@@ -36,10 +36,34 @@ Requirements
 
 Output format: full file contents, one code block per file.
 
-REFINEMENTS (edit this section to match what your team actually did)
---------------------------------------------------------------------
-v1 -> v2: Found that passing an empty entity list scanned for all entities.
-          Added requirement 5 so the app falls back to our five entities.
-v2 -> v3: Found that whitespace only input should come back unchanged.
-          Added it to requirement 4 and to the test list.
-v3 -> v4: Added the summary counts and file processing for extra credit.
+FOLLOW UP PROMPT (version 2, web app)
+-------------------------------------
+Now update the existing Flask app in pii_web_app.py so it uses redact_lines()
+and summarize() from pii_redactor.py instead of calling anonymize_text()
+directly. Requirements:
+- Show the five supported Team Z entities on the page.
+- Blank entity box means all five entities.
+- Catch RedactorError and show it as a friendly red message on the page.
+- Show a message if the text box is empty.
+- Show how many of each entity type were found under the result.
+- Add a Load example button that fills the text box with a sample paragraph.
+- Keep the existing layout and the port 5000 setup from the sample app.
+
+REFINEMENTS (what changed between versions and why)
+---------------------------------------------------
+Before v1: We tested anonymize_text() on its own first. Two things shaped
+          the prompt. An empty entity list makes Presidio scan for every
+          entity type, not just ours, so requirement 5 tells the app to fall
+          back to our five entities. Whitespace only text also had to come
+          back unchanged, so requirement 4 lists it.
+v1 -> v2: The sample web app called anonymize_text() directly and had
+          different default entities (PERSON, EMAIL_ADDRESS, PHONE_NUMBER).
+          The follow up prompt makes it use our redactor so the web app
+          follows the same rules as the command line and the tests.
+Testing: We ran 21 unit tests and tried the web app with normal text, mixed
+          entities, an unsupported entity (CREDIT_CARD), empty text, and
+          text with no PII. All behaved as expected.
+Known limitation: Presidio sometimes tags the word "NINO" itself as a
+          LOCATION (for example "my NINO is AB123456C"). The NINO number
+          is still redacted correctly, so we documented this and kept our
+          tests on sentences that avoid the issue.
