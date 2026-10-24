@@ -1,0 +1,45 @@
+COMP410 Sprint 3 - Team Z - AI prompt used to build the PII redactor
+=====================================================================
+
+PROMPT (version 1)
+------------------
+You are helping a college software engineering team build a small Python
+application that detects and redacts personally identifiable information (PII).
+
+Context
+- The repo has pii_scan.py with two functions we must use:
+  anonymize_text(text: str, entity_list: list) -> str   (returns redacted text)
+  analyze_text(text: str, entity_list: list) -> list    (returns Presidio results)
+- Presidio replaces each PII span with a tag such as <PHONE_NUMBER>.
+- Our team (Team Z) is only responsible for these entities:
+  PHONE_NUMBER, LOCATION, PERSON, UK_NHS, UK_NINO
+
+Requirements
+1. Create pii_redactor.py with a function redact_text(text, entities=None) that
+   calls anonymize_text() from pii_scan.py and returns the original text with
+   PII redacted. All non PII text must stay exactly the same.
+2. The app must accept an entity list and the text to anonymize. The entity list
+   can be a Python list or a comma separated string, in any letter case.
+3. Reject entity names outside our five supported entities with a clear error.
+4. Handle bad input without crashing: non string text, empty text, whitespace
+   only text, and a missing file. Show the user a friendly message.
+5. Important: an empty entity list makes Presidio scan for EVERY entity type,
+   so treat an empty or missing list as "all five Team Z entities".
+6. Add a command line interface with --entities, --text, --input, --output and
+   --summary options.
+7. Extras: a summarize() function that counts detections per entity type, a
+   batch mode that redacts line by line, and file in / file out processing.
+8. Write readable code with docstrings and no duplicated logic.
+9. Write unittest tests in test_sprint3_team_z.py covering: each of our five
+   entities, multiple occurrences, mixed entities, no PII, empty input,
+   whitespace input, invalid entity names, invalid input types, and files.
+
+Output format: full file contents, one code block per file.
+
+REFINEMENTS (edit this section to match what your team actually did)
+--------------------------------------------------------------------
+v1 -> v2: Found that passing an empty entity list scanned for all entities.
+          Added requirement 5 so the app falls back to our five entities.
+v2 -> v3: Found that whitespace only input should come back unchanged.
+          Added it to requirement 4 and to the test list.
+v3 -> v4: Added the summary counts and file processing for extra credit.
