@@ -60,9 +60,11 @@ v1 -> v2: The sample web app called anonymize_text() directly and had
           different default entities (PERSON, EMAIL_ADDRESS, PHONE_NUMBER).
           The follow up prompt makes it use our redactor so the web app
           follows the same rules as the command line and the tests.
-Testing: We ran 21 unit tests and tried the web app with normal text, mixed
-          entities, an unsupported entity (CREDIT_CARD), empty text, and
-          text with no PII. All behaved as expected.
+Testing: The Sprint 3 suite now has 28 unit tests covering entity handling,
+          normal and boundary inputs, files, CLI errors, and Flask form
+          behavior. The suite passes with the project's Python dependencies
+          installed. The web tests use Flask's test client and deterministic
+          redactor results for the form flow.
 Known limitation: Presidio sometimes tags the word "NINO" itself as a
           LOCATION (for example "my NINO is AB123456C"). The NINO number
           is still redacted correctly, so we documented this and kept our

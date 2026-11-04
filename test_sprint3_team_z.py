@@ -1,10 +1,13 @@
 """Sprint 3 tests for the Team Z PII redactor."""
 import os
-import tempfile
+import uuid
 import unittest
+from contextlib import redirect_stderr, redirect_stdout
+from io import StringIO
+from unittest.mock import patch
 
 from pii_redactor import (RedactorError, SUPPORTED_ENTITIES, parse_entities,
-                          redact_file, redact_lines, redact_text, summarize)
+                          main, redact_file, redact_lines, redact_text, summarize)
 
 
 class TestEntityParsing(unittest.TestCase):
@@ -96,18 +99,83 @@ class TestExtras(unittest.TestCase):
         self.assertEqual(out, "<PHONE_NUMBER>\n\nhello")
 
     def test_file_round_trip(self):
-        with tempfile.TemporaryDirectory() as folder:
-            src = os.path.join(folder, "in.txt")
-            dst = os.path.join(folder, "out.txt")
+        # Use unique paths next to this test file so no system temp location
+        # or directory cleanup permissions are required.
+        folder = os.path.dirname(os.path.abspath(__file__))
+        suffix = uuid.uuid4().hex
+        src = os.path.join(folder, f".sprint3-in-{suffix}.txt")
+        dst = os.path.join(folder, f".sprint3-out-{suffix}.txt")
+        try:
             with open(src, "w", encoding="utf-8") as handle:
                 handle.write("Call 336-555-0123\nNo PII here")
             redact_file(src, dst, ["PHONE_NUMBER"])
             with open(dst, encoding="utf-8") as handle:
                 self.assertEqual(handle.read(), "Call <PHONE_NUMBER>\nNo PII here")
+        finally:
+            for path in (src, dst):
+                if os.path.exists(path):
+                    os.remove(path)
 
     def test_missing_file(self):
         with self.assertRaises(RedactorError):
             redact_file("does_not_exist.txt", "out.txt")
+
+
+class TestCommandLine(unittest.TestCase):
+    """CLI success and user-facing error paths."""
+    def test_text_input_and_summary(self):
+        stdout = StringIO()
+        with redirect_stdout(stdout):
+            self.assertEqual(main(["--text", "hello", "--summary"]), 0)
+        self.assertIn("hello", stdout.getvalue())
+        self.assertIn("Found: nothing", stdout.getvalue())
+
+    def test_unsupported_entity_is_reported(self):
+        stderr = StringIO()
+        with redirect_stderr(stderr):
+            self.assertEqual(main(["--text", "hello", "-e", "CREDIT_CARD"]), 1)
+        self.assertIn("Unsupported entity", stderr.getvalue())
+
+    def test_missing_file_is_reported(self):
+        stderr = StringIO()
+        with redirect_stderr(stderr):
+            self.assertEqual(main(["--input", "missing-sprint3-input.txt"]), 1)
+        self.assertIn("File not found", stderr.getvalue())
+
+
+class TestWebApp(unittest.TestCase):
+    """Exercise the Flask form and error handling without model variability."""
+    def setUp(self):
+        import pii_web_app
+        self.module = pii_web_app
+        self.client = pii_web_app.app.test_client()
+
+    def test_get_page_lists_supported_entities(self):
+        response = self.client.get("/")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"UK_NINO", response.data)
+
+    def test_empty_text_gets_friendly_message(self):
+        response = self.client.post("/", data={"text": "   ", "entities": ""})
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Please enter some text", response.data)
+
+    def test_valid_post_displays_redacted_text_and_counts(self):
+        with patch.object(self.module, "redact_lines", return_value="Call <PHONE_NUMBER>"), \
+             patch.object(self.module, "summarize", return_value={"PHONE_NUMBER": 1}):
+            response = self.client.post("/", data={
+                "text": "Call 336-555-0123", "entities": "PHONE_NUMBER"
+            })
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Call &lt;PHONE_NUMBER&gt;", response.data)
+        self.assertIn(b"PHONE_NUMBER: 1", response.data)
+
+    def test_invalid_entity_is_shown_as_friendly_error(self):
+        response = self.client.post("/", data={
+            "text": "hello", "entities": "CREDIT_CARD"
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Unsupported entity", response.data)
 
 
 if __name__ == "__main__":

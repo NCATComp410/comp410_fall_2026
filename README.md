@@ -21,7 +21,7 @@ It calls `anonymize_text()` from `pii_scan.py` and swaps each PII span for a tag
 
 ### Setup
 ```
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 ```
 The first run downloads the spaCy model (`en_core_web_lg`), so give it a minute.
 
@@ -42,7 +42,10 @@ python pii_redactor.py --input notes.txt --output notes_redacted.txt
 python -m unittest test_sprint3_team_z -v
 ```
 
+The Sprint 3 suite covers entity handling, redaction, boundary inputs, file
+processing, command-line errors, and the Flask form using Flask's test client.
+
 ### Notes
 - Empty or missing entity list means all five Team Z entities.
 - Unsupported entities and bad input give a clear error message instead of crashing.
-- The AI prompt we used is in `sprint3_prompt_team_z.txt`.
+- The AI prompt and its documented refinements are in `team_z_prompt.txt`.
