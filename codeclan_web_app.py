@@ -9,6 +9,8 @@ Features:
   * redacted output with highlighted placeholders and a per-entity summary
   * download the redacted text as a file
   * JSON API: POST /api/redact {"text": "...", "entities": [...]}
+
+Author: Sapri Sise (Team CodeClan lead developer). See README "Who did what".
 """
 import os
 

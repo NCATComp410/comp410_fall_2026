@@ -3,6 +3,8 @@
 Covers normal input, multiple occurrences, mixed entity types, text with no
 PII, boundary conditions, invalid input and unusual cases for the CLI, the
 core module and the web app.
+
+Author: Sapri Sise (Team CodeClan lead developer). See README "Who did what".
 """
 import io
 import unittest
