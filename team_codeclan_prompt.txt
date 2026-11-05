@@ -1,0 +1,162 @@
+Team CodeClan - COMP410 Fall 2026 Sprint 3 - AI Prompt
+=======================================================
+
+FINAL PROMPT (used to generate the application)
+-----------------------------------------------
+You are working in the COMP410 Python repository. pii_scan.py exposes
+anonymize_text(text: str, entity_list: list) -> str, which uses Microsoft
+Presidio to replace each detected PII value with <ENTITY_TYPE>, and
+analyze_text(text, entity_list, show_supported=True), which returns every
+entity name the analyzer supports. Do NOT modify pii_scan.py.
+
+Our team (CodeClan) is responsible for these entities:
+  ABA_ROUTING_NUMBER, AU_ABN, AU_ACN, AU_MEDICARE, AU_TFN
+
+Build a PII redaction application with three parts:
+
+1. codeclan_redactor.py - core logic, no I/O
+   - redact(text, entities) -> RedactionResult(original, redacted, entities, counts)
+     and it MUST call pii_scan.anonymize_text() to do the redaction.
+   - parse_entities(raw) accepts a comma/semicolon/space separated string OR a
+     list of strings. Upper-case the names, strip whitespace, remove duplicates
+     but keep the order.
+       * blank/None/empty list -> default to our five team entities
+       * "ALL" -> every entity supported by the analyzer
+       * any unknown name -> raise RedactorError (a ValueError subclass) that
+         lists the bad names and suggests the closest valid name using difflib
+         (e.g. "AU_TFM (did you mean AU_TFN?)").
+       * non-string items -> RedactorError.
+   - Validate text: None or non-str -> RedactorError; bytes are decoded as UTF-8
+     (RedactorError if that fails); reject text longer than 100,000 characters
+     with a clear message. Empty or whitespace-only text is returned unchanged
+     without calling the NLP pipeline.
+   - Count redactions per entity by counting <ENTITY> placeholders in the
+     output, minus any identical placeholders that were already in the input.
+   - The output must be byte-for-byte the input text except for the redacted
+     spans (whitespace, newlines, unicode and punctuation preserved).
+
+2. codeclan_cli.py - argparse command-line tool
+   - positional TEXT, or -f/--file with one or more UTF-8 files (batch), or
+     text piped on stdin.
+   - -e/--entities, -o/--output (single input only), --out-dir (batch, writes
+     <name>_redacted<ext>), -s/--summary (counts to stderr), --list-entities.
+   - Exit code 0 on success, 1 on invalid input (unknown entity, missing or
+     non-UTF-8 file, text too long), 2 on usage errors. Never show a traceback
+     for user mistakes.
+   - Expose run(argv) -> int so it can be unit tested.
+
+3. codeclan_web_app.py - Flask app that runs cleanly in Codespaces
+   (host 0.0.0.0, port from $PORT or 5000)
+   - Checkboxes for the five team entities (all ticked by default), a text
+     field for extra entity names or ALL, a textarea, and an optional .txt
+     upload.
+   - Buttons: Anonymize, Load sample text (fills realistic text containing all
+     five entities), Download redacted .txt.
+   - Show the result with each <ENTITY> placeholder highlighted, HTML-escaped
+     first so user input can never inject HTML, and a table of counts per
+     entity, or "No PII found" when nothing matched.
+   - If every checkbox is unticked and the extra field is blank, show
+     "Select at least one entity (or type ALL)" instead of using defaults.
+   - Errors (empty text, unknown entity, non-UTF-8 upload) appear on the page
+     with HTTP 400. Never return a 500 error for bad user input.
+   - JSON API: POST /api/redact {"text": ..., "entities": [...]} returning
+     {"redacted", "entities", "counts", "total"}; 400 with {"error"} for bad input.
+
+4. test_codeclan_sprint3.py - unittest/pytest suite
+   Use checksum-valid values: ABA 021000021, ABN 51 824 753 556,
+   ACN 004 085 616, Medicare 2123 45670 1, TFN 876 543 210 (and 123 456 782),
+   plus a one-digit-changed invalid version of each. Test:
+   - each entity alone; invalid checksums are NOT redacted; output equals
+     anonymize_text() called directly; only the requested entity is redacted
+   - multiple occurrences, all five entities mixed, multiline text
+   - text with no PII, empty and whitespace-only text, PII that is the whole
+     text, PII at the start/end next to punctuation, digits inside a longer
+     number, unicode, a literal "<AU_TFN>" already in the input, the exact
+     length limit and one character over, bytes input
+   - entity parsing: case, separators, duplicates, defaults, ALL, unknown
+     names with suggestions, wrong types
+   - CLI: text, summary, unknown entity, missing file, file/batch/non-UTF-8
+     file, usage errors, --list-entities
+   - alternative formats (unspaced ABN/ACN/TFN/Medicare, dashed ABA) and the
+     formats Presidio does NOT detect (dashed TFN, number glued to a word,
+     Medicare /IRN suffix) so a future Presidio upgrade is noticed
+   - web app: GET, form redaction, no entities selected, HTML escaping, empty text, bad entity,
+     upload + download, non-UTF-8 upload, JSON API success and bad input
+
+Also add flask to requirements.txt and a README section with run instructions
+for the web app, CLI and tests. Keep the code readable, with docstrings, every function under flake8
+complexity 10, and
+avoid duplicated logic: the CLI and web app must both use codeclan_redactor.
+
+
+PROMPT REFINEMENT LOG
+---------------------
+v1 (starting point, based on the sample from sprint3-team-null):
+  "Using anonymize_text() in pii_scan.py create a simple web app that lets the
+   user enter a list of entities and some text, and outputs the redacted text."
+  Problems we saw with what it generated:
+  - Unknown entity names reached Presidio and failed with a generic error
+    ("No matching recognizers were found"). Users could not tell which name
+    was wrong.
+  - Blank entity list silently scanned for ALL ~50 entity types, so ordinary
+    numbers (dates, room numbers) were redacted as other teams' entities.
+  - All logic was inside the Flask route, so we could not unit-test it or reuse
+    it from a command line.
+  - Output was put into the page without escaping, so <script> could inject HTML.
+
+v2: asked for a separate core module + CLI + web app, entity validation with
+  "did you mean" hints, and blank list -> team defaults. Added "ALL" as an
+  explicit way to keep the old behaviour.
+
+v3: added explicit testing requirements with checksum-valid AND checksum-invalid
+  values for every team entity, and boundary cases (empty, whitespace, limits,
+  unicode, punctuation, embedded digits). Added HTML-escaping and highlighting.
+
+v4: after running the tests and probing extra formats (see BUGS FOUND below),
+  added to the prompt: "if every checkbox is unticked and the extra field is
+  blank, show an error instead of silently using the defaults", "keep every
+  function under flake8 complexity 10", and "add tests that pin down the
+  number formats Presidio does NOT detect, so a future upgrade is noticed".
+
+BUGS FOUND AND FIXED DURING TESTING
+-----------------------------------
+1. Blank entity list redacted other teams' PII (confirmed by test).
+   anonymize_text("Meet John on March 3 2026 in room 204.", []) returns
+   "Meet <PERSON> on <DATE_TIME> in room 204." because an empty list means
+   "every entity". Fix: our parse_entities() maps blank -> the five CodeClan
+   entities; "ALL" is now an explicit opt-in.
+   Test: test_blank_list_does_not_redact_other_teams_entities
+
+2. Unknown entity names produced an unhelpful error.
+   anonymize_text("hi", ["BOGUS"]) raises
+   ValueError("No matching recognizers were found to serve the request.").
+   Fix: validate names first and raise RedactorError naming the bad entity
+   with a "did you mean" suggestion (AU_TFM -> AU_TFN). CLI exits with code 1,
+   web app shows the message with HTTP 400 instead of a 500 error.
+   Tests: test_unknown_entity_with_suggestion, test_unknown_entity_exit_code,
+          test_form_empty_text_and_bad_entity, test_api_invalid
+
+3. Web app: unticking every entity checkbox silently redacted all five
+   team entities (blank -> defaults), which is not what the user chose.
+   Fix: the form now shows "Select at least one entity (or type ALL)".
+   Test: test_form_no_entities_selected
+
+4. requirements.txt had no newline at the end, so appending "flask" produced
+   the invalid line "presidio-anonymizerflask". Fixed the file and checked
+   that each package is on its own line.
+
+5. Literal placeholders were counted as redactions. Text that already
+   contained "<AU_TFN>" made the summary report one extra TFN. Fix: count
+   placeholders in the output MINUS placeholders already in the input.
+   Test: test_existing_placeholder_not_counted
+
+6. flake8 reported run() (complexity 14) and parse_entities() (11) as too
+   complex. Split them into _collect_jobs()/_emit() and _tokenize().
+
+KNOWN LIMITATIONS (Presidio recognizers, pii_scan.py left unchanged)
+   - A TFN written with dashes ("876-543-210") is not detected.
+   - A number glued to a word ("TFN876543210") is not detected.
+   - Medicare IRN suffix: "2123 45670 1/2" -> "<AU_MEDICARE>/2".
+   These are pinned by test_known_limits_of_presidio_recognizers.
+   Formats that DO work: unspaced ABN/ACN/TFN/Medicare and dashed ABA
+   (0210-0002-1) - test_unspaced_and_dashed_formats_detected.
