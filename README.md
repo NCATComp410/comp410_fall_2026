@@ -117,3 +117,4 @@ python -m pytest test_sprint3_operation_eclipse.py test_team_operation_eclipse.p
 | Two cards separated only by a space | `4111111111111111 4111111111111111` | `<CREDIT_CARD>` | Presidio's anonymizer merges same-type PII separated only by whitespace. With a comma between them, each card gets its own tag. No PII leaks. |
 | Misspelled entity name | `a@b.com` with entity `EMAIL_ADRESS` | Error: `No matching recognizers were found to serve the request.` | Calling `anonymize_text()` directly with an unknown entity name raises an error, so the application needs to check entity names before calling it. |
 
+
