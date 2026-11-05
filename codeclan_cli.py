@@ -9,7 +9,7 @@ Examples:
 
 Exit codes: 0 = success, 1 = invalid input, 2 = bad command-line usage.
 
-Author: Sapri Sise (Team CodeClan lead developer). See README "Who did what".
+Author: Jasmine & Ryan, Team CodeClan. See README "Who did what".
 """
 from __future__ import annotations
 

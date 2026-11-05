@@ -1,5 +1,5 @@
 Team CodeClan - COMP410 Fall 2026 Sprint 3 - AI Prompt
-Written by: Sapri Sise (Team CodeClan). Prompt review role: Kailyn & Marcus (see README).
+Written by: Kailyn & Marcus (Team CodeClan prompt engineers).
 =======================================================
 
 FINAL PROMPT (used to generate the application)

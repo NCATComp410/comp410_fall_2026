@@ -6,7 +6,7 @@ Core logic shared by the command-line tool (codeclan_cli.py) and the web app
 Team CodeClan supports these entity types (Sprint 1 / Sprint 2):
     ABA_ROUTING_NUMBER, AU_ABN, AU_ACN, AU_MEDICARE, AU_TFN
 
-Author: Sapri Sise (Team CodeClan lead developer). See README "Who did what".
+Author: Sapri Sise (lead developer), Team CodeClan. See README "Who did what".
 """
 from __future__ import annotations
 

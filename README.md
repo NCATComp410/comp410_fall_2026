@@ -72,39 +72,12 @@ These come from Presidio's recognizers (`pii_scan.py` is unchanged), and the tes
 - A number with no space before it (`TFN876543210`) is not detected.
 - For a Medicare number with an IRN suffix (`2123 45670 1/2`), the `/2` stays in the output.
 
-### Team roles
-
-| Role | Member(s) | Owns |
-|------|-----------|------|
-| Lead developer and integrator | Sapri Sise | Core module, web app, CLI, shared edge-case tests, AU_MEDICARE, final merge |
-| ABA_ROUTING_NUMBER tester / web app QA | Kamryn & Caleb | ABA tests, web app review |
-| AU_ACN tester / CLI QA | Jasmine & Ryan | ACN tests, CLI and batch review |
-| AU_TFN tester / prompt engineer | Kailyn & Marcus | TFN tests, `team_codeclan_prompt.txt` refinement and bug log |
-| AU_ABN tester / documentation | Jarren | ABN tests, README |
-
 ### Who did what
 
-**Sapri Sise (lead developer)**
-- Created the `sprint3-team-codeclan` branch
-- Wrote `codeclan_redactor.py`, `codeclan_web_app.py` and `codeclan_cli.py` with AI help
-- Wrote `test_codeclan_sprint3.py` (48 tests), found and fixed the 6 bugs logged in the prompt file
-- Wrote `team_codeclan_prompt.txt` and the README instructions; did the final merge and push
-- Sprint 2: AU_MEDICARE unit tests
-
-**Kamryn & Caleb (ABA_ROUTING_NUMBER)**
-- Sprint 2: ABA_ROUTING_NUMBER unit tests
-- Sprint 3: review ABA test cases; QA the web app
-
-**Jasmine & Ryan (AU_ACN)**
-- Sprint 2: AU_ACN unit tests
-- Sprint 3: review ACN test cases; QA the CLI and batch mode
-
-**Kailyn & Marcus (AU_TFN)**
-- Sprint 2: AU_TFN unit tests
-- Sprint 3: review TFN test cases; review the prompt and its refinement log
-
-**Jarren (AU_ABN)**
-- Sprint 2: AU_ABN unit tests
-- Sprint 3: review ABN test cases; review the README
-
-Sprint 2 credits come from the comments and commits in `test_team_codeclan.py`.
+| Member(s) | Sprint 3 work | Sprint 2 entity |
+|-----------|---------------|-----------------|
+| Sapri Sise | Lead developer: core module `codeclan_redactor.py`, shared edge-case tests, integration, final merge and push | AU_MEDICARE |
+| Kamryn & Caleb | Web app `codeclan_web_app.py` and its tests; ABA test cases | ABA_ROUTING_NUMBER |
+| Jasmine & Ryan | Command-line app `codeclan_cli.py` (file and batch modes) and its tests; ACN test cases | AU_ACN |
+| Kailyn & Marcus | AI prompt `team_codeclan_prompt.txt`, its refinement history and bug log; TFN test cases | AU_TFN |
+| Jarren | README run instructions and known limitations; ABN test cases | AU_ABN |
