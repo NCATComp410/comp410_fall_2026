@@ -153,8 +153,14 @@ def api_redact():
 
 @app.errorhandler(413)
 def too_large(_exc):
-    """Friendly message for oversized uploads."""
-    return jsonify(error=f"Input too large (limit {MAX_TEXT_LENGTH:,} characters)."), 413
+    """Friendly message for oversized uploads: JSON for the API, a page otherwise."""
+    message = f"Input too large (limit {MAX_TEXT_LENGTH:,} characters)."
+    if request.path.startswith("/api/"):
+        return jsonify(error=message), 413
+    return render_template_string(PAGE, team_entities=TEAM_ENTITIES,
+                                  checked=list(TEAM_ENTITIES), extra="", text="",
+                                  result=None, highlighted="",
+                                  error=f"Error: {message}"), 413
 
 
 if __name__ == "__main__":

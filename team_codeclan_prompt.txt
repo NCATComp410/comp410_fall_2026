@@ -99,25 +99,34 @@ v1 (starting point, based on the sample from sprint3-team-null):
   - Unknown entity names reached Presidio and failed with a generic error
     ("No matching recognizers were found"). Users could not tell which name
     was wrong.
-  - Blank entity list silently scanned for ALL ~50 entity types, so ordinary
-    numbers (dates, room numbers) were redacted as other teams' entities.
+  - Blank entity list silently scanned for ALL ~50 entity types, so names and
+    dates were redacted as other teams' entities (PERSON, DATE_TIME).
   - All logic was inside the Flask route, so we could not unit-test it or reuse
     it from a command line.
-  - Output was put into the page without escaping, so <script> could inject HTML.
 
 v2: asked for a separate core module + CLI + web app, entity validation with
   "did you mean" hints, and blank list -> team defaults. Added "ALL" as an
   explicit way to keep the old behaviour.
+  How it improved the app: a typo like AU_TFM now gets "did you mean AU_TFN?"
+  instead of a confusing Presidio error; a blank list only touches our five
+  entities; one core module is shared by the web app and CLI (no duplicated
+  logic) and can be unit-tested on its own.
 
 v3: added explicit testing requirements with checksum-valid AND checksum-invalid
   values for every team entity, and boundary cases (empty, whitespace, limits,
-  unicode, punctuation, embedded digits). Added HTML-escaping and highlighting.
+  unicode, punctuation, embedded digits). Added highlighting of redactions,
+  per-entity counts, file upload/download and batch mode.
+  How it improved the app: the generated test suite caught bug 5 (placeholder
+  miscount); users can see exactly what was removed and process whole files.
 
 v4: after running the tests and probing extra formats (see BUGS FOUND below),
   added to the prompt: "if every checkbox is unticked and the extra field is
   blank, show an error instead of silently using the defaults", "keep every
-  function under flake8 complexity 10", and "add tests that pin down the
-  number formats Presidio does NOT detect, so a future upgrade is noticed".
+  function under flake8 complexity 10", "add tests that pin down the number
+  formats Presidio does NOT detect, so a future upgrade is noticed", and
+  "oversized uploads and empty CLI input must give a clear message".
+  How it improved the app: fixed bugs 3, 6 and 7; the code passes flake8 with
+  no warnings; the known limits are now documented and tested, not surprises.
 
 BUGS FOUND AND FIXED DURING TESTING
 -----------------------------------
@@ -161,3 +170,12 @@ KNOWN LIMITATIONS (Presidio recognizers, pii_scan.py left unchanged)
    These are pinned by test_known_limits_of_presidio_recognizers.
    Formats that DO work: unspaced ABN/ACN/TFN/Medicare and dashed ABA
    (0210-0002-1) - test_unspaced_and_dashed_formats_detected.
+
+ADDITIONAL FIXES FROM FINAL REVIEW
+   7. Uploading a file over the size limit from the web page returned raw
+      JSON instead of a page. Fix: form requests now get the normal page with
+      an error message (HTTP 413); /api/redact still gets JSON.
+      Test: test_oversized_upload_shows_page_error
+   8. The CLI printed nothing for empty input, so users could not tell if it
+      worked. Fix: prints "Note: input is empty - nothing to redact." to stderr.
+      Test: test_empty_input_note

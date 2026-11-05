@@ -114,6 +114,9 @@ def run(argv: list[str] | None = None) -> int:
     try:
         jobs = _collect_jobs(parser, args)
         for path, text in jobs:
+            if not text.strip():
+                label = f"{path}: " if path is not None else ""
+                print(f"Note: {label}input is empty - nothing to redact.", file=sys.stderr)
             _emit(args, path, redact(text, args.entities), batch=len(jobs) > 1)
     except RedactorError as exc:
         print(f"Error: {exc}", file=sys.stderr)

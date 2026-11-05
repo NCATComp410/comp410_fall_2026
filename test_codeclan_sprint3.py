@@ -275,6 +275,11 @@ class TestCli(unittest.TestCase):
                     self._run(*argv)
                 self.assertEqual(ctx.exception.code, 2)
 
+    def test_empty_input_note(self):
+        code, out, err = self._run("")
+        self.assertEqual((code, out.strip()), (0, ""))
+        self.assertIn("input is empty", err)
+
     def test_list_entities(self):
         code, out, _ = self._run("--list-entities")
         self.assertEqual(code, 0)
@@ -326,6 +331,13 @@ class TestWebApp(unittest.TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertIn("attachment", resp.headers["Content-Disposition"])
         self.assertEqual(resp.data, b"ABN <AU_ABN>")
+
+    def test_oversized_upload_shows_page_error(self):
+        data = {"file": (io.BytesIO(b"a" * 500_000), "big.txt")}
+        resp = self.client.post("/", data=data, content_type="multipart/form-data")
+        self.assertEqual(resp.status_code, 413)
+        self.assertIn(b"Input too large", resp.data)
+        self.assertIn(b"CodeClan PII Redactor", resp.data)  # a page, not raw JSON
 
     def test_non_utf8_upload(self):
         data = {"file": (io.BytesIO(b"\xff\xfe\x00"), "bin.txt")}
