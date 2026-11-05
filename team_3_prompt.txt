@@ -1,0 +1,132 @@
+COMP410 Fall 2026 - Sprint 3 - Team 3 AI Prompt & Refinement Log
+================================================================
+
+Team Branch: sprint3-team-3
+Assigned Team 3 Entities (Sprint 1 & Sprint 2):
+  - IT_DRIVER_LICENSE (Italian Driver's License)
+  - IT_FISCAL_CODE    (Italian Fiscal Code / Codice Fiscale)
+  - IT_IDENTITY_CARD  (Italian Identity Card / Carta d'identita)
+  - IT_PASSPORT       (Italian Passport / Passaporto)
+  - IT_VAT_CODE       (Italian VAT Code / Partita IVA, custom ItalianVatRecognizer)
+
+
+PROMPT (Version 1 - Core Redactor Module, CLI, and Unit Test Suite)
+-------------------------------------------------------------------
+You are assisting Team 3 in COMP410 (Fall 2026) to build a Python application for
+Sprint 3 that detects and anonymizes our team's assigned Italian PII entities.
+
+Repository Context:
+- `pii_scan.py` defines:
+    `anonymize_text(text: str, entity_list: list) -> str`
+    `analyze_text(text: str, entity_list: list, show_supported=False) -> list`
+- `italian_vat_recognizer.py` defines `ItalianVatRecognizer(ItVatCodeRecognizer)`,
+  which is registered in `pii_scan.py` for `IT_VAT_CODE` along with Presidio's
+  predefined recognizers for `IT_DRIVER_LICENSE`, `IT_FISCAL_CODE`,
+  `IT_IDENTITY_CARD`, and `IT_PASSPORT`.
+- `anonymize_text()` replaces each matched PII span with `<ENTITY_TYPE>` (for
+  example, `<IT_VAT_CODE>` or `<IT_FISCAL_CODE>`).
+
+Application Requirements:
+1. Create `pii_redactor.py` containing:
+   - `SUPPORTED_ENTITIES = ["IT_DRIVER_LICENSE", "IT_FISCAL_CODE", "IT_IDENTITY_CARD", "IT_PASSPORT", "IT_VAT_CODE"]`
+   - `RedactorError(ValueError)` for clear, user-facing validation errors.
+   - `parse_entities(entities=None) -> list[str]`:
+     Accepts `None`, a comma- or space-separated string, or a list/tuple/set of
+     strings (case-insensitive, deduplicated). If `entities` is `None` or empty,
+     default to `SUPPORTED_ENTITIES` so Presidio does not scan for all global
+     entity types. Raise `RedactorError` for non-string items or any entity
+     outside `SUPPORTED_ENTITIES`.
+   - `redact_text(text: str, entities=None) -> str`:
+     Validates that `text` is a `str`, parses `entities`, returns empty or
+     whitespace-only strings unchanged without invoking the analyzer, and calls
+     `anonymize_text(text, entity_list)` from `pii_scan.py`.
+   - Creative enhancements:
+     * `summarize(text: str, entities=None, line_by_line: bool = False) -> dict[str, int]`
+       to return per-entity detection counts.
+     * `redact_lines(text: str, entities=None) -> str` for batch line-by-line
+       processing where each line is treated as a standalone record.
+     * `redact_file(in_path: str, out_path: str, entities=None, line_by_line: bool = False) -> str`
+       for UTF-8 file redaction with friendly `FileNotFoundError` and
+       `UnicodeDecodeError` handling.
+     * A CLI (`main(argv=None)`) using `argparse` with `--entities` (`-e`),
+       `--text` (`-t`), `--input` (`-i`), `--output` (`-o`), `--batch-lines` (`-b`),
+       and `--summary` (`-s`).
+
+2. Create `test_sprint3_team_3.py` using `unittest` to thoroughly test:
+   - Normal inputs for all 5 Team 3 entities (`IT_DRIVER_LICENSE`, `IT_FISCAL_CODE`,
+     `IT_IDENTITY_CARD`, `IT_PASSPORT`, `IT_VAT_CODE`).
+   - Comprehensive `IT_VAT_CODE` cases from Sprint 2 (`test_team_3.py`), including:
+     * Standalone bare 11-digit VAT codes (`01333550323`, `(01333550323)`, `01333550323.`)
+     * `IT`-prefixed codes (`IT01333550323`, `it01333550323`, `IT 12345670017`,
+       special offices `100`, `120`, `121`, `888`, `999`)
+     * Labeled unprefixed codes (`Partita IVA: 013 33550 323`, `P_IVA: 01333550323`,
+       `codice IVA: 01333550_323`, `VAT number is 01333550323.`)
+     * Shared-label VAT lists (`VAT numbers: 01333550323, 12345670017 and IT12345671007`)
+     * Boundary cases where valid-checksum 11-digit numbers in neighboring fields
+       must NOT be redacted (`VAT number: 01333550323, Invoice ID: 12345670017`,
+       `VAT number: 01333550323\n12345670017`, `Supplier: IT01333550323, 12345670017`)
+     * Invalid VAT codes (bad checksum `01333550324`, all zeros `00000000000`,
+       zero company `00000000018`, invalid offices `000` and `101`, wrong lengths,
+       foreign `DE 12345670017`)
+   - Multiple occurrences, mixed Team 3 entities, subset entity filtering, text
+     with no PII, empty and whitespace-only inputs, and invalid input types.
+
+
+FOLLOW-UP PROMPT (Version 2 - Flask Web Application & Multi-Line VAT Handling)
+------------------------------------------------------------------------------
+Update `pii_web_app.py` (starting from the `sprint3-team-null` Flask sample app)
+to integrate with `pii_redactor.py`:
+1. Display Team 3's five supported entities (`IT_DRIVER_LICENSE`, `IT_FISCAL_CODE`,
+   `IT_IDENTITY_CARD`, `IT_PASSPORT`, `IT_VAT_CODE`) as badges at the top of the UI.
+2. Default the entity input box to all five Team 3 entities, and treat a blank
+   entity input as all five Team 3 entities.
+3. Preserve multi-line context by calling `redact_text(text, parsed)` by default
+   (so `VAT number: 01333550323\n12345670017` does not falsely treat line 2 as a
+   standalone bare VAT number), while providing an optional "Batch mode" checkbox
+   that calls `redact_lines(text, parsed)` when the user wants each line treated
+   as an independent record.
+4. Add two quick-load example buttons:
+   - "Load Team 3 Mixed Example" (demonstrating all 5 Italian entities in one text)
+   - "Load IT_VAT_CODE Boundary Example" (demonstrating labeled lists, neighboring
+     Invoice IDs, and invalid checksums/offices)
+5. Display detection summary counts underneath the anonymized result and render
+   `RedactorError` or empty-text submissions as friendly error banners without
+   crashing. Keep host `0.0.0.0` and port `5000` for GitHub Codespaces.
+
+
+FOLLOW-UP PROMPT (Version 3 - Overlap Deduplication in Summary Counts)
+----------------------------------------------------------------------
+When all five Team 3 entities are analyzed simultaneously on a 9-character
+Italian passport code such as `Passaporto: AB1234567`, `analyze_text()` returns
+both `IT_PASSPORT` (boosted score 0.4 from context word `Passaporto`) and
+`IT_IDENTITY_CARD` (base paper-card pattern score 0.01) for the exact same span
+`(12, 21)`. `AnonymizerEngine` resolves this overlap by picking the higher-scoring
+`IT_PASSPORT`, but a naive `summarize()` loop over `analyze_text()` would count
+both entities. Update `summarize()` in `pii_redactor.py` with `_resolve_overlaps()`
+so overlapping spans keep only the highest-scoring (and longest) match, matching
+the exact tags in the anonymized output.
+
+
+PROMPT REFINEMENTS & HOW THEY IMPROVED THE APPLICATION
+------------------------------------------------------
+1. Empty Entity List Guard (Pre-v1 -> v1):
+   In `pii_scan.py`, passing `entity_list=[]` or `None` to `analyze_text()` causes
+   Presidio's `AnalyzerEngine` to scan for ALL registered entities across every
+   team (including `PERSON`, `LOCATION`, and `US_PASSPORT`). Refining
+   `parse_entities()` to map `None` or empty input to `SUPPORTED_ENTITIES`
+   ensured the application strictly targets Team 3's five Italian PII types.
+
+2. Multi-Line Context vs. Batch Line Mode (v1 -> v2):
+   In `italian_vat_recognizer.py`, an unlabeled 11-digit number is accepted only
+   when the entire input is a standalone number (`re.fullmatch(r"[^\w]*[0-9]{11}[^\w]*", text)`)
+   or part of a single-line comma/conjunction list after a VAT label. Splitting
+   text by newline by default would turn line 2 of `"VAT number: 01333550323\n12345670017"`
+   into a standalone string and falsely redact `"12345670017"`. Keeping full-text
+   `redact_text()` as the default and offering `redact_lines()` as an explicit
+   batch-mode option preserved every Sprint 2 boundary requirement while still
+   supporting batch record processing.
+
+3. Overlap Resolution in Detection Summaries (v2 -> v3):
+   Adding `_resolve_overlaps()` in `pii_redactor.py` aligned `summarize()` with
+   Presidio's `AnonymizerEngine` conflict resolution so summary badge counts in
+   the CLI and web UI always match the `<ENTITY_TYPE>` replacements in the output.
