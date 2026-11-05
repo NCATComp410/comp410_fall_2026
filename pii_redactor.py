@@ -260,7 +260,7 @@ def main(argv=None) -> int:
     except UnicodeDecodeError:
         print(f"Error: File is not valid UTF-8 text: {args.input}", file=sys.stderr)
         return 1
-    except RedactorError as exc:
+    except (RedactorError, OSError) as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
     return 0
