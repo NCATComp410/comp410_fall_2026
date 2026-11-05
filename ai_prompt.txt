@@ -1,0 +1,14 @@
+Build a Python command-line application that detects and anonymizes Personally Identifiable Information (PII) in text.
+
+Requirements:
+1. Import and use the anonymize_text() function from pii_scan.py.
+2. The application must accept two primary inputs:
+   - A list of target PII entities to scan for (e.g., ["EMAIL", "PHONE", "SSN"]).
+   - A string of input text to be scanned and anonymized.
+3. It must invoke anonymize_text(text, entities) and return the original text with specified PII redacted (e.g., replacing sensitive values with [REDACTED] or a tag like [EMAIL]).
+4. Handle edge cases and invalid inputs gracefully without crashing:
+   - Empty string or empty entity list.
+   - Text containing no PII.
+   - Mixed entity types and multiple occurrences of the same entity.
+   - Invalid data types or missing arguments.
+5. Provide a clear, user-friendly CLI interface or function wrapper with descriptive error messages and feedback.
