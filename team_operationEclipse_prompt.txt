@@ -1,1 +1,9 @@
-
+Using anonymize_text() in pii_scan.py create a simple test web app that allows
+the user to enter a list of entities to search for
+(entities to pick from CREDIT_CARD, CRYPTO, DATE_TIME, EMAIL_ADDRESS, MEDICAL_LICENSE) 
+and some text to be anonymized( input comes from a text field or upload file
+(.txt, .doc/.docx, .csv, .md))
+The output should be a redacted version of the text replacing any PII with <PII_TYPE>, where
+PII_TYPE is the entity type that was found (should output to a new text box).
+Make the web app so that it can run cleanly from codespace. Use Flask to make the web app,
+also keep the theme to lighter colors(have a clear button to clear the input text field).

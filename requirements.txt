@@ -2,3 +2,5 @@ spacy
 requests
 presidio-analyzer
 presidio-anonymizer
+Flask
+python-docx
