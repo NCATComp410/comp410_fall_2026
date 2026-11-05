@@ -135,9 +135,13 @@ def summarize(text: str, entities=None, line_by_line: bool = False) -> dict[str,
     for segment in segments:
         if not segment.strip():
             continue
-        resolved = _resolve_overlaps(analyze_text(segment, entity_list))
-        for result in resolved:
-            counts[result.entity_type] = counts.get(result.entity_type, 0) + 1
+        redacted_text = anonymize_text(segment, entity_list)
+        for entity in entity_list:
+            placeholder = f"<{entity}>"
+            count = redacted_text.count(placeholder)
+
+            if count > 0:
+                counts[entity] = counts.get(entity, 0) + count
     return counts
 
 
