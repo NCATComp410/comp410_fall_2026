@@ -1,7 +1,39 @@
-Use the anonymize_text() function in pii_scan.py, create a test web app that allows the user to enter a list of entities to search for and some text to be anonymized.  
+Team 1 AI Prompt - Sprint 3 PII Anonymization Web App
 
-The app should follow these requirements:
+ FINAL PROMPT 
 
-Output should be a redacted version of the text replacing any PII with <PII_TYPE>, where PII_TYPE is the entity type that was found.  
+Using the anonymize_text() function in pii_scan.py, create a Python web app (app.py) that runs cleanly from a GitHub Codespace on port 8000. The app lets the user enter which PII entities to search for and anonymizes the text they provide.
 
-Web app should run cleanly from codespace. 
+Requirements:
+
+1. Entities
+   - Let the user type entity names separated by commas or new lines.
+   - Accept any entity type that pii_scan.py supports, including Team 1's entities: IBAN_CODE, IP_ADDRESS, ES_NIE, ES_NIF, and FI_PERSONAL_IDENTITY_CODE.
+   - Show the list of supported entity types on the page.
+
+2. Input
+   - Let the user paste text into a text box.
+   - Also let the user upload a .txt, .csv, .log, or .md file instead of pasting text.
+
+3. Output
+   - Show a redacted version of the text that replaces each PII value with <PII_TYPE>, where PII_TYPE is the entity type found (for example, <IBAN_CODE>).
+   - If no PII is found, return the text unchanged.
+   - Let the user download the redacted result as redacted.txt.
+
+4. Error handling (show a clear message on the page instead of crashing)
+   - No entity types entered.
+   - An unsupported entity type, naming which one was invalid.
+   - Empty text with no file uploaded.
+   - An uploaded file that is not .txt, .csv, .log, or .md, or is not UTF-8 text.
+
+5. Testing
+   - Write unit tests with Python's unittest module for the app, Team 1's five entities, text with multiple PII values, text with no PII, empty input, invalid entity names, and the file upload and download features.
+
+=== PROMPT REFINEMENT HISTORY ===
+
+Version 1 (first draft):
+   Asked for a web app using anonymize_text() that takes a list of entities and some text, outputs redacted text with <PII_TYPE>, and runs in a Codespace.
+   Gaps: it did not name our team's entities, did not say how to handle bad input, and did not include the file upload and download feature or testing.
+
+Version 2 (final):
+   Added Team 1's entities, input rules, error handling for each bad-input case, file upload and download (our creativity enhancement), and testing requirements, so the prompt describes the app we actually built.
