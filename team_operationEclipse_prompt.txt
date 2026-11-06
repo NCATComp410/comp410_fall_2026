@@ -1,0 +1,27 @@
+Using anonymize_text() in pii_scan.py create a simple test web app that allows
+the user to enter a list of entities to search for
+(entities to pick from CREDIT_CARD, CRYPTO, DATE_TIME, EMAIL_ADDRESS, MEDICAL_LICENSE) 
+and some text to be anonymized( input comes from a text field or upload file
+(.txt, .doc/.docx, .csv, .md))
+The output should be a redacted version of the text replacing any PII with <PII_TYPE>, where
+PII_TYPE is the entity type that was found (should output to a new text box).
+Make the web app so that it can run cleanly from codespace. Use Flask to make the web app,
+also keep the theme to lighter colors(have a clear button to clear the input text field).
+
+AI Prompt Refinement – Aniya Teasley
+Improve the existing Operation Eclipse Flask application to ensure it meets all Sprint 3 requirements.
+Keep the current application structure and use anonymize_text() from pii_scan.py. Support CREDIT_CARD, CRYPTO, DATE_TIME, EMAIL_ADDRESS, and MEDICAL_LICENSE.
+Additional Instructions:
+1. Allow users to select multiple PII entities and enter text or upload a supported file.
+2. Replace detected PII with its entity label, such as <EMAIL_ADDRESS>, while preserving all non-PII text.
+3. Handle multiple occurrences of the same entity and different entity types in one paragraph.
+4. Handle empty inputs, invalid entity selections, unsupported files, and unexpected errors without crashing.
+5. Display clear messages when an error occurs.
+6. Return the original text unchanged when no selected PII is detected.
+7. Include tests for valid inputs, empty inputs, multiple PII occurrences, mixed entities, invalid inputs, and text without PII.
+8. Maintain a simple interface with a clear button.
+9. Preserve existing functionality and avoid changing unrelated files.
+10. Review the current code and explain any missing requirements before making changes.
+
+Reason for Refinement:
+The original prompt covered the basic web application functionality. This refinement adds error handling, multiple PII detection, testing requirements, and input validation to improve reliability and satisfy the Sprint 3 rubric.

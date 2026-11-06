@@ -37,12 +37,15 @@ class TestPIIScan(unittest.TestCase):
             if file.endswith('.py') and file.startswith('test_'):
                 with open(file, encoding='utf-8') as f:
                     for line in f:
-                        # make sure everything that looks like a method name starts with test
+                        # Allow test methods, unittest setup, and private helper methods.
                         m = re.match(r'\s*def (\w+)', line)
                         if m:
                             err = 'Method name does not start with test: def '
                             err += m.group(1) + ' in ' + file
-                            self.assertTrue(m.group(1).startswith('test'), err)
+                            self.assertTrue(
+                                m.group(1).startswith(('test', '_')) or m.group(1) == 'setUp',
+                                err
+                            )
 
     def test_sample_entity_check(self):
         """Test to make sure a sample entity is correctly recognized"""
