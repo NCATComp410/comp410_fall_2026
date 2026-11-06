@@ -1,10 +1,10 @@
 import unittest
 from app import process_anonymization, parse_entity_list, SUPPORTED_ENTITIES
 
-class TestPIIAnonymizer(unittest.TestCase):
+DEFAULT_ENTITIES = list(SUPPORTED_ENTITIES)
 
-    def setUp(self):
-        self.default_entities = list(SUPPORTED_ENTITIES)
+
+class TestPIIAnonymizer(unittest.TestCase):
 
     # --- Normal Functionality ---
     def test_single_entity_redaction(self):
@@ -28,16 +28,16 @@ class TestPIIAnonymizer(unittest.TestCase):
     # --- Edge Cases & Boundaries ---
     def test_no_pii_present(self):
         text = "This sentence contains strictly public text with no personal data."
-        redacted, _ = process_anonymization(text, self.default_entities)
+        redacted, _ = process_anonymization(text, DEFAULT_ENTITIES)
         self.assertEqual(redacted, text)
 
     def test_empty_string(self):
-        redacted, _ = process_anonymization("", self.default_entities)
+        redacted, _ = process_anonymization("", DEFAULT_ENTITIES)
         self.assertEqual(redacted, "")
 
     def test_whitespace_and_newlines(self):
         text = "\n\n   \t  \n"
-        redacted, _ = process_anonymization(text, self.default_entities)
+        redacted, _ = process_anonymization(text, DEFAULT_ENTITIES)
         self.assertEqual(redacted, text)
 
     def test_pii_at_string_boundaries(self):
