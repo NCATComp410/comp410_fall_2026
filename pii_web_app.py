@@ -138,7 +138,10 @@ def _read_uploaded_file(upload):
 		if suffix == ".docx":
 				from docx import Document
 
-				document = Document(io.BytesIO(content))
+				try:
+					document = Document(io.BytesIO(content))
+				except Exception as exc:
+					raise ValueError("Could not read this .docx file.") from exc
 				parts = [paragraph.text for paragraph in document.paragraphs if paragraph.text]
 				for table in document.tables:
 						parts.extend("\t".join(cell.text for cell in row.cells) for row in table.rows)
@@ -147,16 +150,16 @@ def _read_uploaded_file(upload):
 		if suffix == ".doc":
 				antiword = shutil.which("antiword")
 				if not antiword:
-						raise ValueError("Legacy .doc files need antiword. Install it with: sudo apt-get install antiword")
+					raise ValueError("Legacy .doc files need antiword. Install it with: sudo apt-get install antiword")
 				with tempfile.TemporaryDirectory() as temp_dir:
 						path = Path(temp_dir) / "upload.doc"
 						path.write_bytes(content)
 						try:
-								result = subprocess.run(
-										[antiword, str(path)], check=True, capture_output=True, timeout=30
-								)
+							result = subprocess.run(
+								[antiword, str(path)], check=True, capture_output=True, timeout=30
+							)
 						except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as exc:
-								raise ValueError("Could not read this .doc file.") from exc
+							raise ValueError("Could not read this .doc file.") from exc
 				return result.stdout.decode("utf-8", errors="replace")
 
 		try:
@@ -173,12 +176,18 @@ def index():
 		error = None
 
 		if request.method == "POST":
-				selected = [entity for entity in request.form.getlist("entity_types") if entity in ENTITY_TYPES]
+				requested = request.form.getlist("entity_types")
+				selected = [entity for entity in requested if entity in ENTITY_TYPES]
 				upload = request.files.get("input_file")
 				try:
+						unknown = [entity for entity in requested if entity not in ENTITY_TYPES]
+						if unknown:
+							raise ValueError(f"Unknown entity type: {unknown[0]}.")
+						if not selected:
+							raise ValueError("Select at least one entity to redact.")
 						input_text = _read_uploaded_file(upload) if upload and upload.filename else request.form.get("input_text", "")
 						if not input_text.strip():
-								raise ValueError("Enter text or choose a file to anonymize.")
+							raise ValueError("Enter text or choose a file to anonymize.")
 						from pii_scan import anonymize_text
 
 						output_text = anonymize_text(input_text, selected)
@@ -212,4 +221,3 @@ def request_too_large(_error):
 
 if __name__ == "__main__":
 		app.run(host="0.0.0.0", port=int(os.environ.get("PORT", "5000")), debug=False)
-
