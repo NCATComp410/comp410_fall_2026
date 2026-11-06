@@ -45,6 +45,23 @@ python -m unittest test_sprint3_team_z -v
 The Sprint 3 suite covers entity handling, redaction, boundary inputs, file
 processing, command-line errors, and the Flask form using Flask's test client.
 
+### Upload and download text files in the browser
+
+Run `python pii_web_app.py` and open `http://localhost:5000`. Under **Redact a
+text file**, select the entities to redact (blank means all five), choose a
+UTF-8 `.txt` file, and click **Download redacted file**. For example, uploading
+`notes.txt` containing `Call 336-555-0123` with `PHONE_NUMBER` selected downloads
+`notes_redacted.txt` containing `Call <PHONE_NUMBER>`.
+
+Files may contain up to 1 MiB (1,048,576 bytes). Empty files, invalid UTF-8,
+unsupported file types, and oversized uploads receive a clear error. UTF-8
+files with a byte-order mark are accepted. Uploads and results stay in memory;
+the app does not save them to server files. Downloads request no browser caching.
+The original file stays on your computer unchanged.
+
+Upload tests cover real redaction, selected entities, unchanged non-PII text,
+Unicode and line breaks, invalid files, filename handling, and size boundaries.
+
 ### Notes
 - Empty or missing entity list means all five Team Z entities.
 - Unsupported entities and bad input give a clear error message instead of crashing.

@@ -69,3 +69,28 @@ Known limitation: Presidio sometimes tags the word "NINO" itself as a
           LOCATION (for example "my NINO is AB123456C"). The NINO number
           is still redacted correctly, so we documented this and kept our
           tests on sentences that avoid the issue.
+
+FOLLOW UP PROMPT (version 3, browser file workflow)
+--------------------------------------------------
+Extend Team Z's existing Flask app with one focused enhancement: upload a
+UTF-8 .txt file and download <original>_redacted.txt. Reuse redact_lines()
+and its anonymize_text() integration, supporting only our five entities.
+Let users select entities in the upload form; blank means all five.
+Accept files up to 1 MiB, including UTF-8 BOM files. Show friendly errors
+for missing, empty, whitespace-only, incorrectly encoded, wrong-extension,
+or oversized files and unsupported entities. Keep uploaded PII and results
+in memory, including uploads large enough that Flask would normally spool
+to disk. Sanitize the download filename and disable response caching.
+Preserve non-PII Unicode text and line breaks. Keep the existing text form.
+Add Flask tests for actual redaction, selected/default entities, no PII,
+UTF-8, line endings, invalid input, safe filenames, exact size boundaries,
+and in-memory uploads. Document the workflow in README.md.
+
+v2 -> v3: CLI file processing already existed, but browser users had to
+          copy/paste and manually save results. This refinement brings the
+          whole file workflow to the browser while reusing existing logic.
+          Explicit memory handling avoids temporary server files, and
+          size/encoding checks give useful feedback before redaction.
+Validation: All 38 Sprint 3 tests passed, including 10 new upload tests,
+          using Python 3.12 and the real en_core_web_lg model. The upload
+          integration tests exercise anonymize_text() through redact_lines().

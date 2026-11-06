@@ -3,7 +3,7 @@ import os
 import uuid
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
-from io import StringIO
+from io import BytesIO, StringIO
 from unittest.mock import patch
 
 from pii_redactor import (RedactorError, SUPPORTED_ENTITIES, parse_entities,
@@ -176,6 +176,99 @@ class TestWebApp(unittest.TestCase):
         })
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"Unsupported entity", response.data)
+
+
+class TestWebFileUpload(unittest.TestCase):
+    """File downloads use the real redactor; invalid files never reach it."""
+
+    def setUp(self):
+        import pii_web_app
+        self.module = pii_web_app
+        self.client = pii_web_app.app.test_client()
+
+    def upload(self, content, filename="notes.txt", entities="PHONE_NUMBER"):
+        response = self.client.post("/redact-file", data={
+            "file": (BytesIO(content), filename), "entities": entities
+        })
+        # Close the test client's multipart body, which may itself use a temp file.
+        response.request.environ["wsgi.input"].close()
+        return response
+
+    def test_download_redacts_selected_entities_and_preserves_utf8_and_lines(self):
+        response = self.upload("Café: John called 336-555-0123.\r\n\r\nDone.\n".encode())
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data.decode(),
+                         "Café: John called <PHONE_NUMBER>.\r\n\r\nDone.\n")
+        self.assertIn("notes_redacted.txt", response.headers["Content-Disposition"])
+        self.assertIn("attachment", response.headers["Content-Disposition"])
+        self.assertEqual(response.mimetype, "text/plain")
+        self.assertEqual(response.headers["Cache-Control"], "no-store")
+
+    def test_blank_entities_use_team_defaults_and_accept_utf8_bom(self):
+        response = self.upload(b"\xef\xbb\xbfCall 336-555-0123", entities="")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data, b"Call <PHONE_NUMBER>")
+
+    def test_no_pii_is_unchanged(self):
+        response = self.upload(b"hello\n\nworld\n", filename="NOTES.TXT")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data, b"hello\n\nworld\n")
+
+    def test_invalid_files_get_friendly_errors_without_redaction(self):
+        cases = [(b"", "notes.txt", b"file is empty"),
+                 (b" \r\n\t", "notes.txt", b"file is empty"),
+                 (b"\xff\xfe", "notes.txt", b"UTF-8"),
+                 (b"hello", "notes.pdf", b"upload a .txt file")]
+        with patch.object(self.module, "redact_lines") as redact:
+            for content, filename, message in cases:
+                with self.subTest(filename=filename, content=content):
+                    response = self.upload(content, filename)
+                    self.assertEqual(response.status_code, 400)
+                    self.assertIn(message, response.data)
+            redact.assert_not_called()
+
+    def test_missing_file(self):
+        response = self.client.post("/redact-file", data={"entities": ""})
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(b"Please choose a .txt file", response.data)
+
+    def test_unsupported_entities_do_not_return_original_file(self):
+        response = self.upload(b"Call 336-555-0123", entities="CREDIT_CARD")
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(b"Unsupported entity", response.data)
+        self.assertNotIn(b"336-555-0123", response.data)
+        self.assertNotIn("Content-Disposition", response.headers)
+
+    def test_filename_cannot_supply_a_path_or_html(self):
+        response = self.upload(b"hello", filename="../../<script>notes.txt")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("scriptnotes_redacted.txt", response.headers["Content-Disposition"])
+        self.assertNotIn("../", response.headers["Content-Disposition"])
+        self.assertNotIn("<script>", response.headers["Content-Disposition"])
+
+    def test_file_size_boundary(self):
+        limit = self.module.MAX_FILE_BYTES
+        with patch.object(self.module, "redact_lines", return_value="safe") as redact:
+            response = self.upload(b"a" * limit)
+            self.assertEqual(response.status_code, 200)
+            redact.assert_called_once()
+            redact.reset_mock()
+            response = self.upload(b"a" * (limit + 1))
+            self.assertEqual(response.status_code, 413)
+            self.assertIn(b"Upload too large", response.data)
+            redact.assert_not_called()
+
+    def test_oversized_request_gets_friendly_error(self):
+        response = self.upload(b"a" * self.module.app.config["MAX_CONTENT_LENGTH"])
+        self.assertEqual(response.status_code, 413)
+        self.assertIn(b"Upload too large", response.data)
+
+    def test_large_upload_stream_stays_in_memory(self):
+        # Werkzeug normally spools uploads larger than 500 KB to disk.
+        with self.module.app.test_request_context("/redact-file", method="POST", data={
+                "file": (BytesIO(b"a" * 600_000), "notes.txt")}):
+            from flask import request
+            self.assertIsInstance(request.files["file"].stream, BytesIO)
 
 
 if __name__ == "__main__":
