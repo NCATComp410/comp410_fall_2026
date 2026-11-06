@@ -1,13 +1,95 @@
-Build a Python command-line and function-based application that detects and anonymizes Personally Identifiable Information (PII) using Microsoft Presidio and pii_scan.py.
+You are helping Team A (COMP410, Sprint 3) build a PII Anonymizer: a Python application that
+finds Personally Identifiable Information (PII) in text and replaces each occurrence with a
+placeholder naming its type, e.g. "Visit https://example.com" -> "Visit <URL>".
 
-Requirements:
-1. Import and utilize the anonymize_text() function from pii_scan.py.
-2. The application must accept two inputs:
-   - An entity list containing: ["URL", "US_BANK_NUMBER", "US_DRIVER_LICENSE", "US_ITIN", "US_PASSPORT"]
-   - A target string of text to be scanned.
-3. It must invoke anonymize_text(text, entities) and return the fully anonymized string, properly redacting all instances of the specified entities.
-4. Robust Error Handling & Edge Cases:
-   - Gracefully handle empty string inputs or empty entity lists without crashing.
-   - Accurately process text containing mixed entity types, multiple occurrences of the same entity, and text containing zero PII.
-   - Ensure non-PII text is completely preserved.
-5. Provide a user-friendly CLI interface or script execution flow with clear feedback.
+The work was built in stages. Each stage below builds on the previous one; deliver all of them.
+
+--------------------------------------------------------------------------------
+Context: what already exists
+--------------------------------------------------------------------------------
+pii_scan.py configures Microsoft Presidio (AnalyzerEngine + AnonymizerEngine) with the spaCy
+en_core_web_lg model and the custom recognizers from Sprints 1 and 2. Use it; do not modify it.
+It exposes:
+  - analyze_text(text: str, entity_list: list) -> list[RecognizerResult]
+  - anonymize_text(text: str, entity_list: list) -> str
+  - anonymizer  (the shared AnonymizerEngine instance)
+
+IMPORTANT: the parameter is named entity_list. Calling anonymize_text(text, entities=...) raises
+a TypeError. Pass it positionally or as entity_list=... .
+
+Team A's entities, the only ones the application should target:
+  ["URL", "US_BANK_NUMBER", "US_DRIVER_LICENSE", "US_ITIN", "US_PASSPORT"]
+
+--------------------------------------------------------------------------------
+Stage 1: Core logic and command-line app (app.py)
+--------------------------------------------------------------------------------
+1. Define SUPPORTED_ENTITIES as Team A's five entities.
+2. parse_entity_list(raw: list[str]) -> list[str]
+   - Accept names as separate arguments or comma-separated ("url,us_itin"), case-insensitive.
+   - Return all supported entities if the input is empty.
+   - Warn on stderr about unsupported names and drop them.
+3. process_anonymization(text: str, entities: list[str]) -> tuple[str, dict]
+   - Call pii_scan.anonymize_text(text, entity_list=entities).
+   - Return the redacted text plus metrics: original_length, redacted_length, entities_targeted.
+   - Return ("", {...zero lengths...}) for empty text without calling Presidio.
+4. CLI built with argparse:
+   - Input from -t/--text, -f/--file, piped stdin, or an interactive prompt, in that order.
+   - -e/--entities to narrow the target entities; --stats prints the metrics to stderr.
+   - Clear error messages and a non-zero exit code for a missing file or no valid entities.
+5. Edge cases: handle empty input, text with no PII, mixed entity types, and repeated
+   occurrences of the same entity. Leave all non-PII text exactly as it was.
+
+--------------------------------------------------------------------------------
+Stage 2: Unit tests (test_app.py)
+--------------------------------------------------------------------------------
+Using unittest, test parse_entity_list (empty input, comma-separated, mixed case, unsupported
+names) and process_anonymization (each Team A entity, mixed entities, repeated entities,
+no PII, empty string, whitespace and newlines kept). Tests must pass with:
+  python -m unittest test_app -v
+
+--------------------------------------------------------------------------------
+Stage 3: Desktop GUI that shows what is happening (gui.py)
+--------------------------------------------------------------------------------
+Build a Tkinter interface (standard library only; no new dependencies) that imports
+SUPPORTED_ENTITIES from app.py and shows every step of the pipeline:
+  1. Input pane: editable text. After analysis, highlight each detected span in a color
+     unique to its entity type.
+  2. Detections table: entity type, matched text, character span, confidence score, and
+     recognizer name (from RecognizerResult.recognition_metadata).
+  3. Redacted output pane: read-only, showing the anonymized text.
+  4. Metrics: entities found, input and output length, processing time.
+  5. Activity log: timestamped messages for engine load, analysis, and redaction.
+Controls: one color-coded checkbox per entity, plus Load sample, Open file..., Clear, and
+Anonymize buttons.
+Behavior:
+  - Import pii_scan on a background thread (the spaCy model is slow to load). Show a progress
+    bar and status message, and disable Anonymize until the engine is ready.
+  - Run analysis off the UI thread. Send results back through a queue polled with
+    root.after(). Never touch Tk widgets from the worker thread.
+  - Call analyze_text() once and pass those same results to anonymizer.anonymize(), so the
+    highlights, the table, and the output always agree.
+  - Show errors in a dialog and in the log; never crash the window.
+  - Pre-load sample text that contains a valid example of each Team A entity. Presidio
+    rejects some numbers that look right but fail its checksum or invalid-number rules, so
+    test that each example is actually detected.
+
+--------------------------------------------------------------------------------
+Stage 4: Documentation (README.md)
+--------------------------------------------------------------------------------
+Keep the existing repo title, then add a "PII Anonymizer" section covering:
+  - What the app does, with a before/after example.
+  - A table of supported entities with an example of each.
+  - Setup (pip install -r requirements.txt; en_core_web_lg downloads automatically on first run).
+  - GUI usage, with a table explaining each panel.
+  - CLI usage examples (text, file, pipe, -e filtering, --stats).
+  - How it works: analyze -> anonymize.
+  - How to run the tests, and a table of what each file is for.
+
+--------------------------------------------------------------------------------
+Acceptance criteria
+--------------------------------------------------------------------------------
+- python app.py --stats -t "<text containing all five Team A entities>" redacts every one.
+- python gui.py opens, loads the engine, and when Anonymize is clicked shows highlights, a
+  table row per detection, the redacted text, and metrics that all agree.
+- python -m unittest test_app -v passes.
+- Only Team A's entities are targeted, and non-PII text is left exactly as it was.

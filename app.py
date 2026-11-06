@@ -49,7 +49,7 @@ def process_anonymization(text: str, entities: List[str]) -> Tuple[str, dict]:
     if not text:
         return "", {"original_length": 0, "redacted_length": 0}
 
-    redacted_text = anonymize_text(text, entities=entities)
+    redacted_text = anonymize_text(text, entity_list=entities)
 
     stats = {
         "original_length": len(text),
