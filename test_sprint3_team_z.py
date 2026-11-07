@@ -186,7 +186,7 @@ class TestWebFileUpload(unittest.TestCase):
         self.module = pii_web_app
         self.client = pii_web_app.app.test_client()
 
-    def upload(self, content, filename="notes.txt", entities="PHONE_NUMBER"):
+    def _upload(self, content, filename="notes.txt", entities="PHONE_NUMBER"):
         response = self.client.post("/redact-file", data={
             "file": (BytesIO(content), filename), "entities": entities
         })
@@ -195,7 +195,7 @@ class TestWebFileUpload(unittest.TestCase):
         return response
 
     def test_download_redacts_selected_entities_and_preserves_utf8_and_lines(self):
-        response = self.upload("Café: John called 336-555-0123.\r\n\r\nDone.\n".encode())
+        response = self._upload("Café: John called 336-555-0123.\r\n\r\nDone.\n".encode())
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data.decode(),
                          "Café: John called <PHONE_NUMBER>.\r\n\r\nDone.\n")
@@ -205,12 +205,12 @@ class TestWebFileUpload(unittest.TestCase):
         self.assertEqual(response.headers["Cache-Control"], "no-store")
 
     def test_blank_entities_use_team_defaults_and_accept_utf8_bom(self):
-        response = self.upload(b"\xef\xbb\xbfCall 336-555-0123", entities="")
+        response = self._upload(b"\xef\xbb\xbfCall 336-555-0123", entities="")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data, b"Call <PHONE_NUMBER>")
 
     def test_no_pii_is_unchanged(self):
-        response = self.upload(b"hello\n\nworld\n", filename="NOTES.TXT")
+        response = self._upload(b"hello\n\nworld\n", filename="NOTES.TXT")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data, b"hello\n\nworld\n")
 
@@ -222,7 +222,7 @@ class TestWebFileUpload(unittest.TestCase):
         with patch.object(self.module, "redact_lines") as redact:
             for content, filename, message in cases:
                 with self.subTest(filename=filename, content=content):
-                    response = self.upload(content, filename)
+                    response = self._upload(content, filename)
                     self.assertEqual(response.status_code, 400)
                     self.assertIn(message, response.data)
             redact.assert_not_called()
@@ -233,14 +233,14 @@ class TestWebFileUpload(unittest.TestCase):
         self.assertIn(b"Please choose a .txt file", response.data)
 
     def test_unsupported_entities_do_not_return_original_file(self):
-        response = self.upload(b"Call 336-555-0123", entities="CREDIT_CARD")
+        response = self._upload(b"Call 336-555-0123", entities="CREDIT_CARD")
         self.assertEqual(response.status_code, 400)
         self.assertIn(b"Unsupported entity", response.data)
         self.assertNotIn(b"336-555-0123", response.data)
         self.assertNotIn("Content-Disposition", response.headers)
 
     def test_filename_cannot_supply_a_path_or_html(self):
-        response = self.upload(b"hello", filename="../../<script>notes.txt")
+        response = self._upload(b"hello", filename="../../<script>notes.txt")
         self.assertEqual(response.status_code, 200)
         self.assertIn("scriptnotes_redacted.txt", response.headers["Content-Disposition"])
         self.assertNotIn("../", response.headers["Content-Disposition"])
@@ -249,17 +249,17 @@ class TestWebFileUpload(unittest.TestCase):
     def test_file_size_boundary(self):
         limit = self.module.MAX_FILE_BYTES
         with patch.object(self.module, "redact_lines", return_value="safe") as redact:
-            response = self.upload(b"a" * limit)
+            response = self._upload(b"a" * limit)
             self.assertEqual(response.status_code, 200)
             redact.assert_called_once()
             redact.reset_mock()
-            response = self.upload(b"a" * (limit + 1))
+            response = self._upload(b"a" * (limit + 1))
             self.assertEqual(response.status_code, 413)
             self.assertIn(b"Upload too large", response.data)
             redact.assert_not_called()
 
     def test_oversized_request_gets_friendly_error(self):
-        response = self.upload(b"a" * self.module.app.config["MAX_CONTENT_LENGTH"])
+        response = self._upload(b"a" * self.module.app.config["MAX_CONTENT_LENGTH"])
         self.assertEqual(response.status_code, 413)
         self.assertIn(b"Upload too large", response.data)
 
