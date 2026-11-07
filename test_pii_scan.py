@@ -29,9 +29,11 @@ class TestPIIScan(unittest.TestCase):
                 analyze_text('entity load test', entity_list=[entity])
 
     def test_starts_with_test(self):
-        """Test to make sure all test methods start with test"""
+        """Check test names while allowing unittest hooks and private helpers."""
         # In order to run as a test case the method name must start with test
-        # This test checks to make sure all defines within test files start with test
+        # Public methods must be tests or standard unittest lifecycle hooks.
+        lifecycle_methods = {"setUp", "tearDown", "setUpClass", "tearDownClass",
+                             "setUpModule", "tearDownModule"}
         # This is a common mistake that can cause tests to be skipped
         for file in os.listdir('.'):
             if file.endswith('.py') and file.startswith('test_'):
@@ -42,7 +44,9 @@ class TestPIIScan(unittest.TestCase):
                         if m:
                             err = 'Method name does not start with test: def '
                             err += m.group(1) + ' in ' + file
-                            self.assertTrue(m.group(1).startswith('test'), err)
+                            self.assertTrue(
+                                m.group(1).startswith(("test", "_"))
+                                or m.group(1) in lifecycle_methods, err)
 
     def test_sample_entity_check(self):
         """Test to make sure a sample entity is correctly recognized"""

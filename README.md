@@ -1,2 +1,68 @@
 # comp410_fall_2026
 Repo for COMP410 fall 2026 semester
+
+## Run the web app
+
+From the repository root, install the Python dependencies and start the Flask app:
+
+```bash
+python -m pip install -r requirements.txt
+python pii_web_app.py
+```
+
+The app runs on port `5000`. Open `http://localhost:5000` in your browser, or open
+port `5000` from the Codespaces Ports tab. On first run, the app may download the
+spaCy `en_core_web_lg` model.
+
+## Sprint 3: Team Z PII Redactor
+
+Redacts PII for Team Z's entities: `PHONE_NUMBER`, `LOCATION`, `PERSON`, `UK_NHS`, `UK_NINO`.
+It calls `anonymize_text()` from `pii_scan.py` and swaps each PII span for a tag like `<PERSON>`.
+
+### Setup
+```
+python -m pip install -r requirements.txt
+```
+The first run downloads the spaCy model (`en_core_web_lg`), so give it a minute.
+
+### Run it
+```
+# redact some text (all five entities by default)
+python pii_redactor.py --text "Maria Garcia called 336-555-0123 from London."
+
+# pick entities and show counts
+python pii_redactor.py -t "John called 336-555-0123" -e PHONE_NUMBER --summary
+
+# redact a whole file line by line
+python pii_redactor.py --input notes.txt --output notes_redacted.txt
+```
+
+### Run the tests
+```
+python -m unittest test_sprint3_team_z -v
+```
+
+The Sprint 3 suite covers entity handling, redaction, boundary inputs, file
+processing, command-line errors, and the Flask form using Flask's test client.
+
+### Upload and download text files in the browser
+
+Run `python pii_web_app.py` and open `http://localhost:5000`. Under **Redact a
+text file**, select the entities to redact (blank means all five), choose a
+UTF-8 `.txt` file, and click **Download redacted file**. For example, uploading
+`notes.txt` containing `Call 336-555-0123` with `PHONE_NUMBER` selected downloads
+`notes_redacted.txt` containing `Call <PHONE_NUMBER>`.
+
+Files may contain up to 1 MiB (1,048,576 bytes). Empty files, invalid UTF-8,
+unsupported file types, and oversized uploads receive a clear error. UTF-8
+files with a byte-order mark are accepted. Uploads and results stay in memory;
+the app does not save them to server files. Downloads request no browser caching.
+The original file stays on your computer unchanged.
+
+Upload tests cover real redaction, selected entities, unchanged non-PII text,
+Unicode and line breaks, invalid files, filename handling, and size boundaries.
+
+### Notes
+- Empty or missing entity list means all five Team Z entities.
+- Unsupported entities and bad input give a clear error message instead of crashing.
+- The AI prompt and its documented refinements are in `team_z_prompt.txt`.

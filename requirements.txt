@@ -2,3 +2,4 @@ spacy
 requests
 presidio-analyzer
 presidio-anonymizer
+flask

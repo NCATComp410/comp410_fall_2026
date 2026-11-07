@@ -1,0 +1,96 @@
+COMP410 Sprint 3 - Team Z - AI prompt used to build the PII redactor
+=====================================================================
+
+PROMPT (version 1)
+------------------
+You are helping a college software engineering team build a small Python
+application that detects and redacts personally identifiable information (PII).
+
+Context
+- The repo has pii_scan.py with two functions we must use:
+  anonymize_text(text: str, entity_list: list) -> str   (returns redacted text)
+  analyze_text(text: str, entity_list: list) -> list    (returns Presidio results)
+- Presidio replaces each PII span with a tag such as <PHONE_NUMBER>.
+- Our team (Team Z) is only responsible for these entities:
+  PHONE_NUMBER, LOCATION, PERSON, UK_NHS, UK_NINO
+
+Requirements
+1. Create pii_redactor.py with a function redact_text(text, entities=None) that
+   calls anonymize_text() from pii_scan.py and returns the original text with
+   PII redacted. All non PII text must stay exactly the same.
+2. The app must accept an entity list and the text to anonymize. The entity list
+   can be a Python list or a comma separated string, in any letter case.
+3. Reject entity names outside our five supported entities with a clear error.
+4. Handle bad input without crashing: non string text, empty text, whitespace
+   only text, and a missing file. Show the user a friendly message.
+5. Important: an empty entity list makes Presidio scan for EVERY entity type,
+   so treat an empty or missing list as "all five Team Z entities".
+6. Add a command line interface with --entities, --text, --input, --output and
+   --summary options.
+7. Extras: a summarize() function that counts detections per entity type, a
+   batch mode that redacts line by line, and file in / file out processing.
+8. Write readable code with docstrings and no duplicated logic.
+9. Write unittest tests in test_sprint3_team_z.py covering: each of our five
+   entities, multiple occurrences, mixed entities, no PII, empty input,
+   whitespace input, invalid entity names, invalid input types, and files.
+
+Output format: full file contents, one code block per file.
+
+FOLLOW UP PROMPT (version 2, web app)
+-------------------------------------
+Now update the existing Flask app in pii_web_app.py so it uses redact_lines()
+and summarize() from pii_redactor.py instead of calling anonymize_text()
+directly. Requirements:
+- Show the five supported Team Z entities on the page.
+- Blank entity box means all five entities.
+- Catch RedactorError and show it as a friendly red message on the page.
+- Show a message if the text box is empty.
+- Show how many of each entity type were found under the result.
+- Add a Load example button that fills the text box with a sample paragraph.
+- Keep the existing layout and the port 5000 setup from the sample app.
+
+REFINEMENTS (what changed between versions and why)
+---------------------------------------------------
+Before v1: We tested anonymize_text() on its own first. Two things shaped
+          the prompt. An empty entity list makes Presidio scan for every
+          entity type, not just ours, so requirement 5 tells the app to fall
+          back to our five entities. Whitespace only text also had to come
+          back unchanged, so requirement 4 lists it.
+v1 -> v2: The sample web app called anonymize_text() directly and had
+          different default entities (PERSON, EMAIL_ADDRESS, PHONE_NUMBER).
+          The follow up prompt makes it use our redactor so the web app
+          follows the same rules as the command line and the tests.
+Testing: The Sprint 3 suite now has 28 unit tests covering entity handling,
+          normal and boundary inputs, files, CLI errors, and Flask form
+          behavior. The suite passes with the project's Python dependencies
+          installed. The web tests use Flask's test client and deterministic
+          redactor results for the form flow.
+Known limitation: Presidio sometimes tags the word "NINO" itself as a
+          LOCATION (for example "my NINO is AB123456C"). The NINO number
+          is still redacted correctly, so we documented this and kept our
+          tests on sentences that avoid the issue.
+
+FOLLOW UP PROMPT (version 3, browser file workflow)
+--------------------------------------------------
+Extend Team Z's existing Flask app with one focused enhancement: upload a
+UTF-8 .txt file and download <original>_redacted.txt. Reuse redact_lines()
+and its anonymize_text() integration, supporting only our five entities.
+Let users select entities in the upload form; blank means all five.
+Accept files up to 1 MiB, including UTF-8 BOM files. Show friendly errors
+for missing, empty, whitespace-only, incorrectly encoded, wrong-extension,
+or oversized files and unsupported entities. Keep uploaded PII and results
+in memory, including uploads large enough that Flask would normally spool
+to disk. Sanitize the download filename and disable response caching.
+Preserve non-PII Unicode text and line breaks. Keep the existing text form.
+Add Flask tests for actual redaction, selected/default entities, no PII,
+UTF-8, line endings, invalid input, safe filenames, exact size boundaries,
+and in-memory uploads. Document the workflow in README.md.
+
+v2 -> v3: CLI file processing already existed, but browser users had to
+          copy/paste and manually save results. This refinement brings the
+          whole file workflow to the browser while reusing existing logic.
+          Explicit memory handling avoids temporary server files, and
+          size/encoding checks give useful feedback before redaction.
+Validation: All 38 Sprint 3 tests passed, including 10 new upload tests,
+          using Python 3.12 and the real en_core_web_lg model. The upload
+          integration tests exercise anonymize_text() through redact_lines().
